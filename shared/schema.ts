@@ -2,23 +2,6 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Define the AI classification schema
-export const aiClassificationSchema = z.object({
-  confidence: z.number(),
-  label: z.string(),
-  category: z.string(),
-  timestamp: z.string()
-});
-
-export const contentMetadataSchema = z.object({
-  source: z.string().optional(),
-  aiClassification: aiClassificationSchema.optional(),
-  // Add other metadata fields as needed
-});
-
-export type ContentMetadata = z.infer<typeof contentMetadataSchema>;
-export type AIClassification = z.infer<typeof aiClassificationSchema>;
-
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -35,7 +18,7 @@ export const contentItems = pgTable("content_items", {
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   priority: integer("priority").notNull().default(1),
   assignedTo: integer("assigned_to").references(() => users.id),
-  metadata: jsonb("metadata").notNull().$type<ContentMetadata>(),
+  metadata: jsonb("metadata").notNull(),
 });
 
 export const cases = pgTable("cases", {

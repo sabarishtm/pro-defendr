@@ -6,14 +6,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { ContentItem, Case } from "@shared/schema";
+import type { ContentItem, ModerationCase } from "@shared/schema";
 
 export default function Queue() {
   const [activeCase, setActiveCase] = useState<{
     content: ContentItem;
-    case: Case;
+    case: ModerationCase;
   } | null>(null);
-
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -24,15 +24,15 @@ export default function Queue() {
 
   const assignMutation = useMutation({
     mutationFn: async (contentId: number) => {
-      const content = await apiRequest<ContentItem>("POST", `/api/content/${contentId}/assign`, {
+      const content = await apiRequest("POST", `/api/content/${contentId}/assign`, {
         agentId: 1 // Hardcoded for demo
       });
-
-      const case_ = await apiRequest<Case>("POST", "/api/cases", {
+      
+      const case_ = await apiRequest("POST", "/api/cases", {
         contentId,
         agentId: 1,
       });
-
+      
       return { content, case_ };
     },
     onSuccess: (data) => {
