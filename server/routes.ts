@@ -28,12 +28,21 @@ export function registerRoutes(app: Express) {
       if (!user || user.password !== data.password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
-
       req.session.userId = user.id;
       res.json({ user: { ...user, password: undefined } });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
+  });
+
+  app.get("/api/users/me", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const user = await storage.getUser(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ ...user, password: undefined });
   });
 
   app.post("/api/logout", (req: Request, res: Response) => {
