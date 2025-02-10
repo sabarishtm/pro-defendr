@@ -80,7 +80,7 @@ export default function ContentQueue() {
                       Pending
                     </Badge>
                   ) : item.status === "approved" ? (
-                    <Badge variant="success">
+                    <Badge variant="secondary">
                       <CheckCircle className="w-4 h-4 mr-1" />
                       Approved
                     </Badge>

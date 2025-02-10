@@ -5,6 +5,13 @@ import { loginSchema, insertCaseSchema } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
 
+// Extend session type to include userId
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+  }
+}
+
 const SessionStore = MemoryStore(session);
 
 export function registerRoutes(app: Express) {
@@ -24,7 +31,7 @@ export function registerRoutes(app: Express) {
     try {
       const data = loginSchema.parse(req.body);
       const user = await storage.getUserByUsername(data.username);
-      
+
       if (!user || user.password !== data.password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -58,11 +65,14 @@ export function registerRoutes(app: Express) {
 
     const { status } = req.body;
     const user = await storage.updateUserStatus(userId, status);
-    res.json(user);
+    res.json({ ...user, password: undefined });
   });
 
   // Content queue
   app.get("/api/content", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
     const items = await storage.getContentItems();
     res.json(items);
   });
@@ -75,7 +85,7 @@ export function registerRoutes(app: Express) {
 
       const data = insertCaseSchema.parse({ ...req.body, agentId: userId });
       const newCase = await storage.createCase(data);
-      
+
       // Update content item status
       await storage.updateContentItem(data.contentId, {
         status: data.decision || "pending",

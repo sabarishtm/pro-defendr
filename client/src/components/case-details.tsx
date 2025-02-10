@@ -45,7 +45,7 @@ export default function CaseDetails() {
                         <Badge
                           variant={
                             case_.decision === "approved"
-                              ? "success"
+                              ? "secondary"
                               : "destructive"
                           }
                         >
