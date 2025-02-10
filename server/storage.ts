@@ -5,7 +5,7 @@ import {
   type Case, type InsertCase 
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -19,6 +19,7 @@ export interface IStorage {
   getContentItem(id: number): Promise<ContentItem | undefined>;
   createContentItem(item: InsertContentItem): Promise<ContentItem>;
   updateContentItem(id: number, updates: Partial<ContentItem>): Promise<ContentItem>;
+  getNextContentItem(): Promise<ContentItem | undefined>;
 
   // Case operations
   getCases(): Promise<Case[]>;
@@ -78,6 +79,18 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!item) throw new Error("Content item not found");
     return item;
+  }
+
+  async getNextContentItem(): Promise<ContentItem | undefined> {
+    // Get the next unassigned content item that's pending review
+    const [nextItem] = await db
+      .select()
+      .from(contentItems)
+      .where(eq(contentItems.status, "pending"))
+      .where(isNull(contentItems.assignedTo))
+      .limit(1);
+
+    return nextItem;
   }
 
   async getCases(): Promise<Case[]> {

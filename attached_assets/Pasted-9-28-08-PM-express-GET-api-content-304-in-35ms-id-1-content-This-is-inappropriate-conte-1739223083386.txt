@@ -1,0 +1,62 @@
+9:28:08 PM [express] GET /api/content 304 in 35ms :: [{"id":1,"content":"This is inappropriate conte…
+9:28:08 PM [express] GET /api/cases 304 in 36ms :: [{"id":1,"contentId":1,"agentId":1,"status":"open…
+Error processing content: TypeError: storage.getNextContentItem is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:87:38)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Immediate._onImmediate (/home/runner/workspace/node_modules/express-session/index.js:514:7)
+    at process.processImmediate (node:internal/timers:485:21)
+9:28:12 PM [express] GET /api/content/next 500 in 6ms :: {"message":"Error processing content"}
+Error analyzing content: BadRequestError: 400 Invalid parameter: 'response_format' of type 'json_object' is not supported with this model.
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/error.ts:72:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/core.ts:443:21)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/core.ts:507:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async analyzeContent (/home/runner/workspace/server/services/ai.ts:10:24)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:121:24) {
+  status: 400,
+  headers: {
+    'access-control-expose-headers': 'X-Request-ID',
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '90ff339bec9e6332-ORD',
+    connection: 'keep-alive',
+    'content-length': '217',
+    'content-type': 'application/json',
+    date: 'Mon, 10 Feb 2025 21:30:40 GMT',
+    'openai-organization': 'user-cympht3hfiqsxirgzamahnup',
+    'openai-processing-ms': '15',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=XVkvBWxWJIF4IkT4NK.XJmPfAYqd9UwVFKuX9hGRjj8-1739223040-1.0.1.1-cuNIhl20SCQXOyE3QjxS7.NhByP2yHVyN5pEqihjr.AHo7fRHbG2AWBU0KAu5_8.kLl_EVUpvjed8pHBhu7TbA; path=/; expires=Mon, 10-Feb-25 22:00:40 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=XwzrOGVEflZ004O0ufBe8eWef79xaNXEOUKyyWM3XyM-1739223040635-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'x-ratelimit-limit-requests': '10000',
+    'x-ratelimit-limit-tokens': '10000',
+    'x-ratelimit-remaining-requests': '9999',
+    'x-ratelimit-remaining-tokens': '9927',
+    'x-ratelimit-reset-requests': '8.64s',
+    'x-ratelimit-reset-tokens': '438ms',
+    'x-request-id': 'req_9c51b88ae9643374bb3c8d3154afeedf'
+  },
+  request_id: 'req_9c51b88ae9643374bb3c8d3154afeedf',
+  error: {
+    message: "Invalid parameter: 'response_format' of type 'json_object' is not supported with this model.",
+    type: 'invalid_request_error',
+    param: 'response_format',
+    code: null
+  },
+  code: null,
+  param: 'response_format',
+  type: 'invalid_request_error'
+}
+Error creating content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:48:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:121:24)
+9:30:40 PM [express] POST /api/content 400 in 4096ms :: {"message":"Failed to create content"}
