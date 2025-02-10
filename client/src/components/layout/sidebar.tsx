@@ -12,7 +12,7 @@ export function Sidebar() {
   const [location] = useLocation();
 
   const links = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/queue", label: "Moderation Queue", icon: ListChecks },
     { href: "/reports", label: "Reports", icon: BarChart },
   ];
@@ -24,7 +24,7 @@ export function Sidebar() {
           Content Moderation
         </h1>
       </div>
-      
+
       <ScrollArea className="flex-1 py-2">
         <nav className="px-4 space-y-2">
           {links.map(({ href, label, icon: Icon }) => (
