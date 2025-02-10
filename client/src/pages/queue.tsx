@@ -4,8 +4,11 @@ import { QueueItem } from "@/components/moderation/queue-item";
 import { CaseDetails } from "@/components/moderation/case-details";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ContentItem, ModerationCase } from "@shared/schema";
 
 export default function Queue() {
@@ -13,7 +16,9 @@ export default function Queue() {
     content: ContentItem;
     case: ModerationCase;
   } | null>(null);
-  
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [newContent, setNewContent] = useState("");
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -22,17 +27,46 @@ export default function Queue() {
     enabled: !activeCase,
   });
 
+  const uploadMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return await apiRequest("POST", "/api/content", {
+        content,
+        type: "text",
+        priority: 1,
+        metadata: {
+          originalMetadata: {},
+        },
+      });
+    },
+    onSuccess: () => {
+      setNewContent("");
+      setShowUploadForm(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/content/next"] });
+      toast({
+        title: "Content uploaded",
+        description: "Your content has been uploaded and will be analyzed by AI.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to upload content. Please try again.",
+      });
+    },
+  });
+
   const assignMutation = useMutation({
     mutationFn: async (contentId: number) => {
       const content = await apiRequest("POST", `/api/content/${contentId}/assign`, {
         agentId: 1 // Hardcoded for demo
       });
-      
+
       const case_ = await apiRequest("POST", "/api/cases", {
         contentId,
         agentId: 1,
       });
-      
+
       return { content, case_ };
     },
     onSuccess: (data) => {
@@ -70,7 +104,43 @@ export default function Queue() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold">Moderation Queue</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Moderation Queue</h1>
+        <Button onClick={() => setShowUploadForm(!showUploadForm)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Test Content
+        </Button>
+      </div>
+
+      {showUploadForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Upload Test Content</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                uploadMutation.mutate(newContent);
+              }}
+              className="space-y-4"
+            >
+              <Textarea
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                placeholder="Enter content to test AI moderation..."
+                className="min-h-[100px]"
+              />
+              <Button 
+                type="submit" 
+                disabled={uploadMutation.isPending || !newContent.trim()}
+              >
+                {uploadMutation.isPending ? "Uploading..." : "Upload Content"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center p-8">

@@ -109,6 +109,32 @@ export function registerRoutes(app: Express) {
   });
 
 
+  // Content creation with AI analysis
+  app.post("/api/content", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const newContent = await storage.createContentItem(req.body);
+
+      // Run AI analysis on the new content
+      const analysis = await analyzeContent(newContent.content, newContent.type);
+
+      // Update the content with AI analysis
+      const updatedContent = await storage.updateContentItem(newContent.id, {
+        metadata: {
+          ...newContent.metadata,
+          aiAnalysis: analysis,
+        },
+      });
+
+      res.json(updatedContent);
+    } catch (error) {
+      console.error("Error creating content:", error);
+      res.status(400).json({ message: "Failed to create content" });
+    }
+  });
+
   // Case management
   app.post("/api/cases", async (req: Request, res: Response) => {
     try {
@@ -135,7 +161,7 @@ export function registerRoutes(app: Express) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const cases = await storage.getCases();
-    const userCases = cases.filter(c => c.agentId === userId);
+    const userCases = cases.filter((c) => c.agentId === userId);
     res.json(userCases);
   });
 
