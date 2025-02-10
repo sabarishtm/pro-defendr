@@ -5,8 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentItem, ModerationCase } from "@shared/schema";
-import { ThumbsUp, ThumbsDown, AlertTriangle } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, BarChart } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
@@ -26,13 +28,13 @@ export function CaseDetails({
   async function handleDecision(decision: "approve" | "reject") {
     try {
       setIsSubmitting(true);
-      
+
       await apiRequest("PATCH", `/api/cases/${moderationCase.id}`, {
         decision,
         notes,
         status: "closed"
       });
-      
+
       await apiRequest("PATCH", `/api/content/${contentItem.id}`, {
         status: decision === "approve" ? "approved" : "rejected"
       });
@@ -54,6 +56,8 @@ export function CaseDetails({
     }
   }
 
+  const aiAnalysis = contentItem.metadata.aiAnalysis;
+
   return (
     <Card>
       <CardHeader>
@@ -67,6 +71,54 @@ export function CaseDetails({
               This content has been flagged as high priority
             </AlertDescription>
           </Alert>
+        )}
+
+        {aiAnalysis && (
+          <div className="space-y-4 p-4 bg-muted rounded-lg">
+            <div className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">AI Analysis</h3>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Suggested Action:</span>
+                <Badge variant={
+                  aiAnalysis.classification.suggestedAction === "approve" 
+                    ? "success" 
+                    : aiAnalysis.classification.suggestedAction === "reject"
+                    ? "destructive"
+                    : "warning"
+                }>
+                  {aiAnalysis.classification.suggestedAction}
+                </Badge>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Confidence Score</span>
+                  <span>{Math.round(aiAnalysis.classification.confidence * 100)}%</span>
+                </div>
+                <Progress value={aiAnalysis.classification.confidence * 100} />
+              </div>
+
+              {aiAnalysis.contentFlags.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-sm font-medium">Content Flags:</span>
+                  <div className="space-y-1">
+                    {aiAnalysis.contentFlags.map((flag, index) => (
+                      <div key={index} className="flex items-center justify-between text-sm">
+                        <span>{flag.type}</span>
+                        <Badge variant="outline">
+                          Severity: {flag.severity}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
         <div className="space-y-4">

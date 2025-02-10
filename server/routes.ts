@@ -2,6 +2,7 @@ import { Express, Request, Response } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
 import { loginSchema, insertCaseSchema } from "@shared/schema";
+import { analyzeContent } from "./services/ai";
 import session from "express-session";
 import MemoryStore from "memorystore";
 
@@ -76,6 +77,37 @@ export function registerRoutes(app: Express) {
     const items = await storage.getContentItems();
     res.json(items);
   });
+
+  // Modified content queue route to include AI analysis
+  app.get("/api/content/next", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const nextItem = await storage.getNextContentItem();
+      if (!nextItem) {
+        return res.status(404).json({ message: "No content available" });
+      }
+
+      // Only analyze if no AI analysis exists
+      if (!nextItem.metadata.aiAnalysis) {
+        const analysis = await analyzeContent(nextItem.content, nextItem.type);
+        await storage.updateContentItem(nextItem.id, {
+          metadata: {
+            ...nextItem.metadata,
+            aiAnalysis: analysis,
+          },
+        });
+        nextItem.metadata.aiAnalysis = analysis;
+      }
+
+      res.json(nextItem);
+    } catch (error) {
+      console.error("Error processing content:", error);
+      res.status(500).json({ message: "Error processing content" });
+    }
+  });
+
 
   // Case management
   app.post("/api/cases", async (req: Request, res: Response) => {

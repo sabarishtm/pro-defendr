@@ -2,6 +2,23 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// AI Analysis Types
+export const aiAnalysisSchema = z.object({
+  classification: z.object({
+    category: z.string(),
+    confidence: z.number(),
+    suggestedAction: z.enum(["approve", "reject", "review"]),
+  }),
+  contentFlags: z.array(z.object({
+    type: z.string(),
+    severity: z.number(),
+    details: z.string(),
+  })),
+  riskScore: z.number(),
+});
+
+export type AIAnalysis = z.infer<typeof aiAnalysisSchema>;
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -18,7 +35,10 @@ export const contentItems = pgTable("content_items", {
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   priority: integer("priority").notNull().default(1),
   assignedTo: integer("assigned_to").references(() => users.id),
-  metadata: jsonb("metadata").notNull(),
+  metadata: jsonb("metadata").notNull().$type<{
+    aiAnalysis?: AIAnalysis;
+    originalMetadata: Record<string, unknown>;
+  }>(),
 });
 
 export const cases = pgTable("cases", {
@@ -37,12 +57,19 @@ export const insertUserSchema = createInsertSchema(users).pick({
   role: true,
 });
 
-export const insertContentSchema = createInsertSchema(contentItems).pick({
-  content: true,
-  type: true,
-  priority: true,
-  metadata: true,
-});
+export const insertContentSchema = createInsertSchema(contentItems)
+  .pick({
+    content: true,
+    type: true,
+    priority: true,
+    metadata: true,
+  })
+  .extend({
+    metadata: z.object({
+      aiAnalysis: aiAnalysisSchema.optional(),
+      originalMetadata: z.record(z.unknown()),
+    }),
+  });
 
 export const insertCaseSchema = createInsertSchema(cases).pick({
   contentId: true,
