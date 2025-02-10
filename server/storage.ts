@@ -6,6 +6,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import { contentClassifier } from "./lib/ai-classifier";
 
 export interface IStorage {
   // User operations
@@ -63,9 +64,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createContentItem(item: InsertContentItem): Promise<ContentItem> {
+    // Get AI classification before storing
+    const classification = await contentClassifier.classifyContent(item.content, item.type);
+
+    const metadata: ContentMetadata = {
+      ...item.metadata,
+      aiClassification: classification
+    };
+
     const [contentItem] = await db
       .insert(contentItems)
-      .values({ ...item, status: "pending", assignedTo: null })
+      .values({ 
+        ...item, 
+        status: "pending", 
+        assignedTo: null,
+        metadata
+      })
       .returning();
     return contentItem;
   }
