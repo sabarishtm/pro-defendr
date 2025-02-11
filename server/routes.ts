@@ -74,8 +74,14 @@ export function registerRoutes(app: Express) {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const items = await storage.getContentItems();
-    res.json(items);
+    try {
+      const items = await storage.getContentItems();
+      console.log("Sending content items:", items);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching content items:", error);
+      res.status(500).json({ message: "Error fetching content items" });
+    }
   });
 
   // Modified content queue route to include AI analysis
