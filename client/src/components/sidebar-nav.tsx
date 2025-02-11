@@ -50,7 +50,7 @@ export default function SidebarNav() {
         !isExpanded && "p-3"
       )}>
         <img 
-          src="/attached_assets/Sutherland_R_Logo_Horiz_RGB.png"
+          src="Sutherland_R_Logo_Horiz_RGB.png"
           alt="Sutherland Logo"
           className={cn(
             "transition-all duration-300",
