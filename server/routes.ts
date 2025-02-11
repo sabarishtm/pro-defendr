@@ -3,7 +3,6 @@ import express from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
 import { loginSchema, insertCaseSchema, decisionSchema, Permission, UserRole } from "@shared/schema";
-import { analyzeContent } from "./services/ai";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import multer from "multer";
@@ -229,8 +228,24 @@ export function registerRoutes(app: Express) {
         }
       });
 
-      // Run AI analysis on the new content
-      const analysis = await analyzeContent(newContent.content, newContent.type);
+      // Run moderation analysis using TheHive service
+      const moderationResult = await moderationService.moderateContent(newContent);
+      const analysis = {
+        classification: {
+          category: newContent.type,
+          confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
+          suggestedAction: moderationResult.status === "approved" ? "approve" as const :
+                          moderationResult.status === "rejected" ? "reject" as const : "review" as const,
+        },
+        contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
+          type,
+          severity: severity * 10, // Convert to 0-10 scale
+          details: `Content contains ${type} with confidence ${severity}`,
+        })),
+        riskScore: Math.max(...Object.values(moderationResult.aiConfidence), 0),
+        regions: moderationResult.regions,
+        timeline: moderationResult.output,
+      };
 
       // Update the content with AI analysis
       const updatedContent = await storage.updateContentItem(newContent.id, {
