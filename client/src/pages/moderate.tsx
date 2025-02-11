@@ -16,10 +16,22 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
 
   const { data: content, isLoading: isLoadingContent } = useQuery<ContentItem>({
     queryKey: ["/api/content", contentId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/content/${contentId}`);
+      console.log("API Response for content:", response);
+      return response;
+    },
     enabled: !isNaN(contentId),
   });
 
   console.log("ModeratePage - Fetched content:", content);
+
+  const { data: case_ } = useQuery<ModerationCase>({
+    queryKey: ["/api/cases", contentId],
+    enabled: !isNaN(contentId),
+  });
+
+  console.log("ModeratePage - Fetched case:", case_);
 
   const assignMutation = useMutation({
     mutationFn: async () => {
@@ -46,13 +58,6 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
       });
     }
   });
-
-  const { data: case_ } = useQuery<ModerationCase>({
-    queryKey: ["/api/cases", contentId],
-    enabled: !isNaN(contentId),
-  });
-
-  console.log("ModeratePage - Fetched case:", case_);
 
   if (isLoadingContent || assignMutation.isPending) {
     return (
