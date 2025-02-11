@@ -83,6 +83,16 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   decision: true,
 });
 
+// Decision Types
+export const decisionSchema = z.object({
+  contentId: z.number(),
+  decision: z.enum(["approve", "reject"]),
+  notes: z.string().optional(),
+});
+
+export type Decision = z.infer<typeof decisionSchema>;
+
+
 // Export Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

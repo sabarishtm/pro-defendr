@@ -1,8 +1,8 @@
 import { Express, Request, Response } from "express";
-import express from "express";  // Add express import
+import express from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { loginSchema, insertCaseSchema } from "@shared/schema";
+import { loginSchema, insertCaseSchema, decisionSchema } from "@shared/schema";
 import { analyzeContent } from "./services/ai";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -298,19 +298,15 @@ export function registerRoutes(app: Express) {
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      const { contentId, decision, notes } = req.body;
-      console.log("Received decision request:", { contentId, decision, notes, userId });
-
-      if (!contentId || !decision || !["approved", "rejected"].includes(decision)) {
-        return res.status(400).json({ message: "Invalid request data" });
-      }
+      const data = decisionSchema.parse(req.body);
+      console.log("Parsed decision data:", data);
 
       // Find or create case
       const cases = await storage.getCases();
       console.log("Found cases:", cases);
 
       const existingCase = cases.find(c =>
-        c.contentId === contentId &&
+        c.contentId === data.contentId &&
         c.agentId === userId &&
         !c.decision // Only consider undecided cases
       );
@@ -319,28 +315,28 @@ export function registerRoutes(app: Express) {
       let updatedCase;
       if (existingCase) {
         updatedCase = await storage.updateCase(existingCase.id, {
-          decision,
+          decision: data.decision,
           status: "closed",
-          notes
+          notes: data.notes
         });
       } else {
         // Create new case with decision
         updatedCase = await storage.createCase({
-          contentId,
+          contentId: data.contentId,
           agentId: userId,
-          decision,
-          notes
+          decision: data.decision,
+          notes: data.notes || null
         });
       }
       console.log("Updated/Created case:", updatedCase);
 
       // Update content item status
-      await storage.updateContentItem(contentId, {
-        status: decision,
+      await storage.updateContentItem(data.contentId, {
+        status: data.decision === "approve" ? "approved" : "rejected",
         assignedTo: null, // Release assignment after decision
       });
 
-      console.log("Updated case with decision:", updatedCase);
+      console.log("Decision applied successfully:", updatedCase);
       res.json(updatedCase);
     } catch (error) {
       console.error("Error updating case decision:", error);
