@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ContentItem } from "@shared/schema";
+import type { ContentItem } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import {
   Card,
@@ -19,50 +19,57 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle, XCircle, Eye } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Eye } from "lucide-react";
 
 interface QueueProps {
   onOpenModeration?: (item: ContentItem) => void;
 }
 
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [sortField, setSortField] = useState<string>("priority");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof ContentItem>("priority");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const { data: items = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/content");
-      console.log("API Response:", response);
-      if (!Array.isArray(response)) {
-        console.error("Invalid response format:", response);
-        return [];
-      }
-      return response;
-    }
   });
 
   // Sort items
   const sortedItems = [...items].sort((a, b) => {
-    if (sortField === "priority") {
-      return sortOrder === "asc" ? a.priority - b.priority : b.priority - a.priority;
-    }
-    return 0;
+    const aValue = a[sortField];
+    const bValue = b[sortField];
+
+    if (aValue === bValue) return 0;
+
+    const direction = sortDirection === "asc" ? 1 : -1;
+    return aValue < bValue ? -direction : direction;
   });
 
-  const totalItems = sortedItems.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const displayItems = sortedItems.slice((page - 1) * pageSize, page * pageSize);
+  const toggleSort = (field: keyof ContentItem) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const SortableHeader = ({ field, children }: { field: keyof ContentItem, children: React.ReactNode }) => (
+    <TableHead>
+      <Button 
+        variant="ghost" 
+        onClick={() => toggleSort(field)}
+        className="hover:bg-muted px-2 py-1 -ml-2"
+      >
+        {children}
+        {sortField === field && (
+          <span className="ml-2">
+            {sortDirection === "asc" ? "↑" : "↓"}
+          </span>
+        )}
+      </Button>
+    </TableHead>
+  );
 
   if (isLoading) {
     return (
@@ -78,40 +85,28 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Content Queue</CardTitle>
-            <CardDescription>
-              Review and moderate content items in the queue ({totalItems} items)
-            </CardDescription>
-          </div>
-          <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(Number(v))}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select page size" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5 per page</SelectItem>
-              <SelectItem value="10">10 per page</SelectItem>
-              <SelectItem value="20">20 per page</SelectItem>
-            </SelectContent>
-          </Select>
+        <div>
+          <CardTitle>Content Queue</CardTitle>
+          <CardDescription>
+            Review and moderate content items ({items.length} items)
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Content</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
+              <SortableHeader field="content">Content</SortableHeader>
+              <SortableHeader field="type">Type</SortableHeader>
+              <SortableHeader field="priority">Priority</SortableHeader>
+              <SortableHeader field="status">Status</SortableHeader>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayItems.map((item) => (
+            {sortedItems.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium max-w-md truncate">
+                <TableCell className="max-w-[400px] truncate">
                   {item.content}
                 </TableCell>
                 <TableCell>
@@ -123,62 +118,31 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {item.status === "pending" ? (
-                    <Badge variant="outline">
-                      <AlertTriangle className="w-4 h-4 mr-1" />
-                      Pending
-                    </Badge>
-                  ) : item.status === "approved" ? (
-                    <Badge variant="secondary">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Approved
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive">
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Rejected
-                    </Badge>
-                  )}
+                  <Badge variant={
+                    item.status === "approved" 
+                      ? "secondary" 
+                      : item.status === "rejected"
+                      ? "destructive"
+                      : "outline"
+                  }>
+                    {item.status}
+                  </Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
-                    {onOpenModeration && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onOpenModeration(item)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+                  {onOpenModeration && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onOpenModeration(item)}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-
-        <div className="flex justify-between items-center mt-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {displayItems.length} of {totalItems} items
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setPage(page + 1)}
-              disabled={page >= totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
