@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Search } from "lucide-react";
+import { Eye, Search, FileText, Image as ImageIcon, Video } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -90,6 +90,41 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     // For media content, extract filename from path
     const fileName = item.content.split('/').pop() || '';
     return fileName.split('.')[0].slice(0, 15);
+  };
+
+  // Helper function to render content thumbnail
+  const renderThumbnail = (item: ContentItem) => {
+    switch (item.type.toLowerCase()) {
+      case 'image':
+        return (
+          <div className="relative w-12 h-12 rounded overflow-hidden bg-muted">
+            <img
+              src={item.content}
+              alt="Thumbnail"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden absolute inset-0 flex items-center justify-center">
+              <ImageIcon className="w-6 h-6 text-muted-foreground" />
+            </div>
+          </div>
+        );
+      case 'video':
+        return (
+          <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
+            <Video className="w-6 h-6 text-muted-foreground" />
+          </div>
+        );
+      default:
+        return (
+          <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
+            <FileText className="w-6 h-6 text-muted-foreground" />
+          </div>
+        );
+    }
   };
 
   const SortableHeader = ({ field, children }: { field: keyof ContentItem, children: React.ReactNode }) => (
@@ -168,6 +203,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[60px]">Preview</TableHead>
                 <SortableHeader field="name">Content</SortableHeader>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
@@ -182,6 +218,9 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => onOpenModeration?.(item)}
                 >
+                  <TableCell>
+                    {renderThumbnail(item)}
+                  </TableCell>
                   <TableCell className="max-w-[400px] truncate">
                     {getDisplayName(item)}
                   </TableCell>
