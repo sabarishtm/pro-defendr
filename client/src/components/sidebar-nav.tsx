@@ -46,17 +46,29 @@ export default function SidebarNav() {
       onMouseLeave={() => setIsExpanded(false)}
     >
       <div className={cn(
-        "p-6 transition-all duration-300 flex items-center",
+        "p-6 transition-all duration-300 flex items-center relative h-[72px]",
         !isExpanded && "p-3"
       )}>
-        <img 
-          src={isExpanded ? "./logo.png" : "./logo-small.png"}
-          alt="Sutherland Logo"
-          className={cn(
-            "h-auto transition-all duration-300",
-            isExpanded ? "w-48" : "w-8"
-          )}
-        />
+        <div className="relative w-full h-full">
+          <img 
+            src="./logo-small.png"
+            alt="Sutherland Logo"
+            className={cn(
+              "absolute left-0 top-1/2 -translate-y-1/2 h-auto transition-all duration-300",
+              "w-8",
+              isExpanded ? "opacity-0" : "opacity-100"
+            )}
+          />
+          <img 
+            src="./logo.png"
+            alt="Sutherland Logo"
+            className={cn(
+              "absolute left-0 top-1/2 -translate-y-1/2 h-auto transition-all duration-300",
+              "w-48",
+              isExpanded ? "opacity-100" : "opacity-0 scale-75"
+            )}
+          />
+        </div>
         <ChevronRight className={cn(
           "h-5 w-5 transition-transform duration-300 ml-auto",
           isExpanded ? "opacity-0 w-0" : "opacity-100",
