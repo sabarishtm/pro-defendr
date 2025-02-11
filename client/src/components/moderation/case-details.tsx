@@ -5,10 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentItem, ModerationCase } from "@shared/schema";
-import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon, FileText, Video } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon, FileText, Video, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useLocation } from "wouter";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
@@ -25,6 +26,7 @@ export function CaseDetails({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   async function handleDecision(decision: "approve" | "reject") {
     try {
@@ -43,7 +45,7 @@ export function CaseDetails({
         description: `Content has been ${decision === "approve" ? "approved" : "rejected"}.`
       });
 
-      onComplete();
+      setLocation("/dashboard");
     } catch (error) {
       console.error("Decision error:", error);
       toast({
@@ -55,6 +57,10 @@ export function CaseDetails({
       setIsSubmitting(false);
     }
   }
+
+  const handleCancel = () => {
+    setLocation("/dashboard");
+  };
 
   const renderContent = () => {
     const type = contentItem.type?.toLowerCase() || 'text';
@@ -253,6 +259,14 @@ export function CaseDetails({
             >
               <ThumbsDown className="mr-2 h-4 w-4" />
               Reject
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              <X className="mr-2 h-4 w-4" />
+              Cancel
             </Button>
           </div>
         </div>
