@@ -54,7 +54,7 @@ export default function SidebarNav() {
           alt="Sutherland Logo"
           className={cn(
             "h-auto transition-all duration-300",
-            isExpanded ? "w-32" : "w-8"
+            isExpanded ? "w-48" : "w-8"
           )}
         />
         <ChevronRight className={cn(
