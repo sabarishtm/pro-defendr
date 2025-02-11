@@ -6,12 +6,12 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Queue from "@/pages/queue";
-import SidebarNav from "@/components/sidebar-nav";
+import { Sidebar } from "@/components/layout/sidebar";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
-      <SidebarNav />
+      <Sidebar />
       <main className="flex-1 overflow-auto">
         {children}
       </main>
