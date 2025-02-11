@@ -87,7 +87,7 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
 // Decision Types
 export const decisionSchema = z.object({
   contentId: z.number(),
-  decision: z.enum(["approve", "reject"]),
+  decision: z.enum(["approve", "reject", "review"]),
   notes: z.string().optional(),
 });
 

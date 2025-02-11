@@ -341,10 +341,14 @@ export function registerRoutes(app: Express) {
       console.log("Updated/Created case:", updatedCase);
 
       // Update content item status to match the decision
-      const contentStatus = data.decision === "approve" ? "approved" : "rejected";
+      const contentStatus =
+        data.decision === "approve" ? "approved" :
+          data.decision === "reject" ? "rejected" :
+            "pending"; // For review decision, keep it as pending
+
       await storage.updateContentItem(data.contentId, {
         status: contentStatus,
-        assignedTo: null, // Release assignment after decision
+        assignedTo: data.decision === "review" ? null : null, // Release assignment after decision
       });
 
       console.log("Decision applied successfully:", updatedCase);
