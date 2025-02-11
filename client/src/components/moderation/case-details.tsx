@@ -5,14 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentItem, ModerationCase } from "@shared/schema";
-import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, BarChart } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, Brain } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
-  moderationCase: ModerationCase;
+  moderationCase: ModerationCase | undefined;
   onComplete: () => void;
 }
 
@@ -21,7 +21,7 @@ export function CaseDetails({
   moderationCase,
   onComplete 
 }: CaseDetailsProps) {
-  const [notes, setNotes] = useState(moderationCase.notes || "");
+  const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -29,11 +29,13 @@ export function CaseDetails({
     try {
       setIsSubmitting(true);
 
-      await apiRequest("PATCH", `/api/cases/${moderationCase.id}`, {
-        decision,
-        notes,
-        status: "closed"
-      });
+      if (moderationCase) {
+        await apiRequest("PATCH", `/api/cases/${moderationCase.id}`, {
+          decision,
+          notes,
+          status: "closed"
+        });
+      }
 
       await apiRequest("PATCH", `/api/content/${contentItem.id}`, {
         status: decision === "approve" ? "approved" : "rejected"
@@ -56,7 +58,8 @@ export function CaseDetails({
     }
   }
 
-  const aiAnalysis = contentItem.metadata.aiAnalysis;
+  // Safely access AI analysis data with null checks
+  const aiAnalysis = contentItem.metadata?.aiAnalysis;
 
   return (
     <Card>
@@ -73,6 +76,7 @@ export function CaseDetails({
           </Alert>
         )}
 
+        {/* Only show AI analysis if it exists */}
         {aiAnalysis && (
           <div className="space-y-4 p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-2">
@@ -81,28 +85,32 @@ export function CaseDetails({
             </div>
 
             <div className="grid gap-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Suggested Action:</span>
-                <Badge variant={
-                  aiAnalysis.classification.suggestedAction === "approve" 
-                    ? "success" 
-                    : aiAnalysis.classification.suggestedAction === "reject"
-                    ? "destructive"
-                    : "warning"
-                }>
-                  {aiAnalysis.classification.suggestedAction}
-                </Badge>
-              </div>
+              {aiAnalysis.classification && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Suggested Action:</span>
+                    <Badge variant={
+                      aiAnalysis.classification.suggestedAction === "approve" 
+                        ? "success" 
+                        : aiAnalysis.classification.suggestedAction === "reject"
+                        ? "destructive"
+                        : "warning"
+                    }>
+                      {aiAnalysis.classification.suggestedAction}
+                    </Badge>
+                  </div>
 
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Confidence Score</span>
-                  <span>{Math.round(aiAnalysis.classification.confidence * 100)}%</span>
-                </div>
-                <Progress value={aiAnalysis.classification.confidence * 100} />
-              </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Confidence Score</span>
+                      <span>{Math.round(aiAnalysis.classification.confidence * 100)}%</span>
+                    </div>
+                    <Progress value={aiAnalysis.classification.confidence * 100} />
+                  </div>
+                </>
+              )}
 
-              {aiAnalysis.contentFlags.length > 0 && (
+              {aiAnalysis.contentFlags && aiAnalysis.contentFlags.length > 0 && (
                 <div className="space-y-2">
                   <span className="text-sm font-medium">Content Flags:</span>
                   <div className="space-y-1">
