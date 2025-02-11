@@ -303,12 +303,25 @@ export function registerRoutes(app: Express) {
       // Check for existing cases
       const cases = await storage.getCases();
       const contentCases = cases.filter(c => c.contentId === contentId);
+      const openCases = contentCases.filter(c => c.status === "open");
 
-      // Don't allow deletion if there are open cases or content is being actively moderated
-      if (contentCases.some(c => c.status === "open") || (item.status === "pending" && item.assignedTo)) {
-        return res.status(400).json({ 
-          message: "Cannot delete content that is currently being moderated or has open cases" 
-        });
+      let errorMessage = "";
+
+      // If there are open cases, include case information
+      if (openCases.length > 0) {
+        errorMessage = "Content has open moderation cases";
+      }
+
+      // If content is being actively moderated, include moderator information
+      if (item.status === "pending" && item.assignedTo) {
+        const moderator = await storage.getUser(item.assignedTo);
+        errorMessage = moderator 
+          ? `Content is currently being moderated by ${moderator.name}`
+          : "Content is currently being moderated";
+      }
+
+      if (errorMessage) {
+        return res.status(400).json({ message: errorMessage });
       }
 
       // If it's a media file, delete it from the uploads directory
