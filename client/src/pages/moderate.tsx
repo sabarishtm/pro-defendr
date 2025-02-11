@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { CaseDetails } from "@/components/moderation/case-details";
 import type { ContentItem, ModerationCase } from "@shared/schema";
@@ -17,7 +17,7 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
   const { data: content, isLoading: isLoadingContent, error: contentError } = useQuery<ContentItem>({
     queryKey: ["/api/content", contentId],
     queryFn: async () => {
-      const response = await apiRequest<ContentItem>("GET", `/api/content/${contentId}`);
+      const response = await apiRequest("GET", `/api/content/${contentId}`);
       return response;
     },
     enabled: !isNaN(contentId),
@@ -28,7 +28,33 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
     enabled: !isNaN(contentId),
   });
 
-  if (isLoadingContent) {
+  const assignMutation = useMutation({
+    mutationFn: async () => {
+      const content = await apiRequest("POST", `/api/content/${contentId}/assign`, {
+        agentId: 1 // Hardcoded for demo
+      });
+
+      const case_ = await apiRequest("POST", "/api/cases", {
+        contentId,
+        agentId: 1,
+      });
+
+      return { content, case: case_ };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/content", contentId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to assign content. Please try again."
+      });
+    }
+  });
+
+  if (isLoadingContent || assignMutation.isPending) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
