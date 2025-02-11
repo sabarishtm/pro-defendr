@@ -211,7 +211,16 @@ export function registerRoutes(app: Express) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     try {
-      const newContent = await storage.createContentItem(req.body);
+      // Create content with proper metadata structure
+      const newContent = await storage.createContentItem({
+        content: req.body.content,
+        type: req.body.type,
+        priority: req.body.priority || 1,
+        metadata: {
+          originalMetadata: {},
+          ...req.body.metadata
+        }
+      });
 
       // Run AI analysis on the new content
       const analysis = await analyzeContent(newContent.content, newContent.type);
