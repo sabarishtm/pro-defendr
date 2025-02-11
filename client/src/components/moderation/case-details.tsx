@@ -83,7 +83,7 @@ export function CaseDetails({
 
   // Function to render content based on type
   const renderContent = () => {
-    switch (contentItem.type) {
+    switch (contentItem.type.toLowerCase()) {
       case "text":
         return (
           <div className="p-4 bg-muted rounded-lg">
