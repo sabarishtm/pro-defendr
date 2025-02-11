@@ -121,10 +121,9 @@ export default function SidebarNav() {
               <img
                 src="/logo.png"
                 alt="Sutherland Logo"
-                className="h-[20rem] object-contain"
+                className="h-[20rem] object-contain transition-transform duration-300 ease-in-out"
                 style={{
-                  transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
-                  transition: 'transform 0.3s ease-in-out'
+                  transform: isExpanded ? 'none' : 'rotate(-90deg)',
                 }}
               />
             </div>
