@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Moderation Queue", href: "/queue", icon: InboxIcon },
-  { name: "Reports", href: "/reports", icon: BarChart2 },
-  { name: "Team", href: "/team", icon: Users },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
+  { name: "Moderation Queue", href: "queue", icon: InboxIcon },
+  { name: "Reports", href: "reports", icon: BarChart2 },
+  { name: "Team", href: "team", icon: Users },
+  { name: "Settings", href: "settings", icon: Settings },
 ];
 
 export default function SidebarNav() {
@@ -25,8 +25,7 @@ export default function SidebarNav() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/logout", {});
-      return res.json();
+      return await apiRequest("POST", "/api/logout", {});
     },
     onSuccess: () => {
       navigate("/");
@@ -47,7 +46,7 @@ export default function SidebarNav() {
               key={item.name}
               variant="ghost"
               className="w-full justify-start"
-              onClick={() => navigate(item.href)}
+              onClick={() => navigate(`/${item.href}`)}
             >
               <item.icon className="mr-3 h-5 w-5" />
               {item.name}

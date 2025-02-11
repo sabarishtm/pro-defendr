@@ -1,0 +1,35 @@
+_app-6e421ad12bfe58cc.js:16 Invalid href 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev//reports' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-6e421ad12bfe58cc.js:16
+a.JZ.<computed> @ _app-6e421ad12bfe58cc.js:1
+d @ main-298c6b65df7224c7.js:1
+(anonymous) @ _app-6e421ad12bfe58cc.js:4
+lU @ framework-bf360af38676c128.js:1
+t.useMemo @ framework-bf360af38676c128.js:1
+(anonymous) @ _app-6e421ad12bfe58cc.js:4
+ld @ framework-bf360af38676c128.js:1
+ou @ framework-bf360af38676c128.js:1
+i @ framework-bf360af38676c128.js:1
+uI @ framework-bf360af38676c128.js:1
+(anonymous) @ framework-bf360af38676c128.js:1
+uM @ framework-bf360af38676c128.js:1
+uS @ framework-bf360af38676c128.js:1
+C @ framework-bf360af38676c128.js:1
+z @ framework-bf360af38676c128.js:1Understand this errorAI
+_app-6e421ad12bfe58cc.js:16 Invalid href 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev//team' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
+(anonymous) @ _app-6e421ad12bfe58cc.js:16
+a.JZ.<computed> @ _app-6e421ad12bfe58cc.js:1
+d @ main-298c6b65df7224c7.js:1
+(anonymous) @ _app-6e421ad12bfe58cc.js:4
+lU @ framework-bf360af38676c128.js:1
+t.useMemo @ framework-bf360af38676c128.js:1
+(anonymous) @ _app-6e421ad12bfe58cc.js:4
+ld @ framework-bf360af38676c128.js:1
+ou @ framework-bf360af38676c128.js:1
+i @ framework-bf360af38676c128.js:1
+uI @ framework-bf360af38676c128.js:1
+(anonymous) @ framework-bf360af38676c128.js:1
+uM @ framework-bf360af38676c128.js:1
+uS @ framework-bf360af38676c128.js:1
+C @ framework-bf360af38676c128.js:1
+z @ framework-bf360af38676c128.js:1Understand this errorAI
+_app-6e421ad12bfe58cc.js:16 Invalid href 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev//dashboard' passed to next/router in page: '/replEnvironmentDesktop'. Repeated forward-slashes (//) or backslashes \ are not valid in the href.
