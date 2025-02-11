@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 const navigation = [
   { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
@@ -28,6 +29,11 @@ export default function SidebarNav() {
   const [, navigate] = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Get current user data
+  const { data: user } = useQuery({
+    queryKey: ["/api/users/me"],
+  });
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/logout", {});
@@ -36,6 +42,15 @@ export default function SidebarNav() {
       navigate("/");
     },
   });
+
+  // Generate user initials
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <div
@@ -97,30 +112,46 @@ export default function SidebarNav() {
           ))}
         </nav>
       </ScrollArea>
-      <div className={cn(
-        "p-4 border-t",
-        !isExpanded && "p-2"
-      )}>
-        <Button
-          variant="ghost"
-          className={cn(
-            "w-full justify-start",
-            !isExpanded && "px-3"
-          )}
-          onClick={() => logoutMutation.mutate()}
-        >
-          <LogOut className={cn(
-            "h-5 w-5",
-            isExpanded ? "mr-3" : "mr-0"
-          )} />
-          <span className={cn(
-            "transition-all duration-300",
-            !isExpanded && "opacity-0 w-0 overflow-hidden"
-          )}>
-            Logout
-          </span>
-        </Button>
-      </div>
+
+      {user && (
+        <div className={cn(
+          "p-4 border-t",
+          !isExpanded && "p-2"
+        )}>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
+              {getInitials(user.name)}
+            </div>
+            <div className={cn(
+              "flex flex-col transition-all duration-300 overflow-hidden",
+              !isExpanded && "w-0"
+            )}>
+              <span className="text-sm font-medium truncate">{user.name}</span>
+              <span className="text-xs text-muted-foreground capitalize">{user.role.replace('_', ' ')}</span>
+            </div>
+          </div>
+          <Separator className="my-2" />
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full justify-start",
+              !isExpanded && "px-3"
+            )}
+            onClick={() => logoutMutation.mutate()}
+          >
+            <LogOut className={cn(
+              "h-5 w-5",
+              isExpanded ? "mr-3" : "mr-0"
+            )} />
+            <span className={cn(
+              "transition-all duration-300",
+              !isExpanded && "opacity-0 w-0 overflow-hidden"
+            )}>
+              Logout
+            </span>
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
