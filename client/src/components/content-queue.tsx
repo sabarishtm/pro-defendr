@@ -97,31 +97,31 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     switch (item.type.toLowerCase()) {
       case 'image':
         return (
-          <div className="relative w-12 h-12 rounded overflow-hidden bg-muted">
+          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted group-hover:scale-110 transition-all duration-200">
             <img
               src={item.content}
               alt="Thumbnail"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover blur-sm group-hover:blur-0 transition-all duration-200"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
             <div className="hidden absolute inset-0 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-muted-foreground" />
+              <ImageIcon className="w-8 h-8 text-muted-foreground" />
             </div>
           </div>
         );
       case 'video':
         return (
-          <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
-            <Video className="w-6 h-6 text-muted-foreground" />
+          <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
+            <Video className="w-8 h-8 text-muted-foreground" />
           </div>
         );
       default:
         return (
-          <div className="w-12 h-12 rounded flex items-center justify-center bg-muted">
-            <FileText className="w-6 h-6 text-muted-foreground" />
+          <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
+            <FileText className="w-8 h-8 text-muted-foreground" />
           </div>
         );
     }
@@ -203,7 +203,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px]">Preview</TableHead>
+                <TableHead className="w-[80px]">Preview</TableHead>
                 <SortableHeader field="name">Content</SortableHeader>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
@@ -215,10 +215,10 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               {paginatedItems.map((item) => (
                 <TableRow
                   key={item.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="group cursor-pointer hover:bg-muted/50"
                   onClick={() => onOpenModeration?.(item)}
                 >
-                  <TableCell>
+                  <TableCell className="p-2">
                     {renderThumbnail(item)}
                   </TableCell>
                   <TableCell className="max-w-[400px] truncate">
@@ -248,7 +248,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                       size="sm"
                       variant="outline"
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent row click
+                        e.stopPropagation();
                         onOpenModeration?.(item);
                       }}
                     >
