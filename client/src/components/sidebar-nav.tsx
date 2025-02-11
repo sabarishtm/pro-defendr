@@ -50,10 +50,10 @@ export default function SidebarNav() {
         !isExpanded && "p-3"
       )}>
         <img 
-          src="/logo.png"
+          src="./logo.png"
           alt="Sutherland Logo"
           className={cn(
-            "transition-all duration-300",
+            "h-auto transition-all duration-300",
             isExpanded ? "w-32" : "w-8"
           )}
         />
