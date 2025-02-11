@@ -230,15 +230,16 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="space-y-4">
-          <div>
-            <CardTitle>Content Queue</CardTitle>
-            <CardDescription>
-              Review and moderate content items ({totalItems} items)
-            </CardDescription>
-          </div>
+    <div className="space-y-4">
+      {/* Filter Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter Content</CardTitle>
+          <CardDescription>
+            Refine the content queue using multiple criteria
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Search className="h-4 w-4 text-muted-foreground" />
@@ -255,7 +256,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             <Select
               value={filters.type}
               onValueChange={(value) => {
-                setFilters(prev => ({ ...prev, type: value }));
+                setFilters((prev) => ({ ...prev, type: value }));
                 setPage(1);
               }}
             >
@@ -264,15 +265,17 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {uniqueTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                {uniqueTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select
               value={filters.status}
               onValueChange={(value) => {
-                setFilters(prev => ({ ...prev, status: value }));
+                setFilters((prev) => ({ ...prev, status: value }));
                 setPage(1);
               }}
             >
@@ -281,15 +284,17 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {uniqueStatuses.map(status => (
-                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                {uniqueStatuses.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select
               value={filters.priority}
               onValueChange={(value) => {
-                setFilters(prev => ({ ...prev, priority: value }));
+                setFilters((prev) => ({ ...prev, priority: value }));
                 setPage(1);
               }}
             >
@@ -305,7 +310,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             <Select
               value={filters.assignedTo}
               onValueChange={(value) => {
-                setFilters(prev => ({ ...prev, assignedTo: value }));
+                setFilters((prev) => ({ ...prev, assignedTo: value }));
                 setPage(1);
               }}
             >
@@ -315,8 +320,10 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               <SelectContent>
                 <SelectItem value="all">All Assignees</SelectItem>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {uniqueAssignees.map(name => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                {uniqueAssignees.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -331,7 +338,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   mode="single"
                   selected={filters.dateFrom}
                   onSelect={(date) => {
-                    setFilters(prev => ({ ...prev, dateFrom: date }));
+                    setFilters((prev) => ({ ...prev, dateFrom: date }));
                     setPage(1);
                   }}
                   initialFocus
@@ -349,7 +356,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   mode="single"
                   selected={filters.dateTo}
                   onSelect={(date) => {
-                    setFilters(prev => ({ ...prev, dateTo: date }));
+                    setFilters((prev) => ({ ...prev, dateTo: date }));
                     setPage(1);
                   }}
                   initialFocus
@@ -373,7 +380,20 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             >
               Clear
             </Button>
-            <div className="flex-1" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Content Queue Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Content Queue</CardTitle>
+              <CardDescription>
+                Review and moderate content items ({totalItems} items)
+              </CardDescription>
+            </div>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {
@@ -392,162 +412,161 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               </SelectContent>
             </Select>
           </div>
-
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[140px]">Preview</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead onClick={() => toggleSort("type")} className="cursor-pointer">
-                  Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer">
-                  Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead onClick={() => toggleSort("status")} className="cursor-pointer">
-                  Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer">
-                  Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead>Assigned To</TableHead>
-                <TableHead className="w-[120px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedItems.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className="group cursor-pointer hover:bg-muted/50"
-                  onClick={() => onOpenModeration?.(item)}
-                >
-                  <TableCell className="p-2">
-                    {renderThumbnail(item)}
-                  </TableCell>
-                  <TableCell className="max-w-[400px] truncate font-medium">
-                    {getDisplayName(item)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{item.type}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={item.priority > 1 ? "destructive" : "secondary"}>
-                      {item.priority === 1 ? "Low" : "High"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      item.status === "approved"
-                        ? "secondary"
-                        : item.status === "rejected"
-                        ? "destructive"
-                        : "outline"
-                    }>
-                      {item.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {item.createdAt ? (
-                      format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
-                    ) : (
-                      "Unknown"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {item.assignedUserName ? (
-                      <Badge variant="outline" className="bg-muted">
-                        {item.assignedUserName}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[140px]">Preview</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead onClick={() => toggleSort("type")} className="cursor-pointer">
+                    Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer">
+                    Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead onClick={() => toggleSort("status")} className="cursor-pointer">
+                    Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer">
+                    Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead className="w-[120px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedItems.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    className="group cursor-pointer hover:bg-muted/50"
+                    onClick={() => onOpenModeration?.(item)}
+                  >
+                    <TableCell className="p-2">
+                      {renderThumbnail(item)}
+                    </TableCell>
+                    <TableCell className="max-w-[400px] truncate font-medium">
+                      {getDisplayName(item)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{item.type}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={item.priority > 1 ? "destructive" : "secondary"}>
+                        {item.priority === 1 ? "Low" : "High"}
                       </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">Unassigned</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenModeration?.(item);
-                        }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        item.status === "approved"
+                          ? "secondary"
+                          : item.status === "rejected"
+                          ? "destructive"
+                          : "outline"
+                      }>
+                        {item.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {item.createdAt ? (
+                        format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
+                      ) : (
+                        "Unknown"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {item.assignedUserName ? (
+                        <Badge variant="outline" className="bg-muted">
+                          {item.assignedUserName}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenModeration?.(item);
+                          }}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
 
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Content</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this content? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                              Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-destructive hover:text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                deleteMutation.mutate(item.id);
                               }}
-                              className="bg-destructive hover:bg-destructive/90"
                             >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Content</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this content? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                                Cancel
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteMutation.mutate(item.id);
+                                }}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
-            </p>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-              >
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
+              </p>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setPage(page + 1)}
-                disabled={page >= totalPages}
-              >
-                Next
-              </Button>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
