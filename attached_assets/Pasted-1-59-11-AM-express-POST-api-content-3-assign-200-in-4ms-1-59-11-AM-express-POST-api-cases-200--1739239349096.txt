@@ -1,0 +1,56 @@
+1:59:11 AM [express] POST /api/content/3/assign 200 in 4ms
+1:59:11 AM [express] POST /api/cases 200 in 169ms :: {"id":4,"contentId":3,"agentId":1,"status":"ope…
+Error analyzing content: SyntaxError: Unexpected token 'A', "As an AI, "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:36:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+Error processing content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:59:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+1:59:13 AM [express] GET /api/content/next 500 in 2288ms :: {"message":"Error processing content"}
+1:59:40 AM [express] GET /api/content 200 in 132ms :: [{"id":1,"content":"This is inappropriate cont…
+1:59:40 AM [express] GET /api/cases 200 in 180ms :: [{"id":1,"contentId":1,"agentId":1,"status":"ope…
+Error analyzing content: SyntaxError: Unexpected token 'A', "Apologies "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:36:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+Error processing content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:59:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+1:59:46 AM [express] GET /api/content/next 500 in 1578ms :: {"message":"Error processing content"}
+2:00:17 AM [express] POST /api/content 200 in 3252ms :: {"id":7,"content":"bad content\n\nf#UK Y0u",…
+Error analyzing content: SyntaxError: Unexpected token 'S', "Sorry, as "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:36:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+Error processing content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:59:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+2:00:20 AM [express] GET /api/content/next 500 in 2093ms :: {"message":"Error processing content"}
+Error analyzing content: SyntaxError: Unexpected token 'I', "In order t"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:36:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+Error processing content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:59:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+2:00:59 AM [express] GET /api/content/next 500 in 4888ms :: {"message":"Error processing content"}
+2:01:13 AM [express] POST /api/content 200 in 3043ms :: {"id":8,"content":"BAD CONTENT BAD BAD BAD",…
+Error analyzing content: SyntaxError: Unexpected token 'S', "Sorry, but"... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:36:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+Error processing content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:59:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+2:01:14 AM [express] GET /api/content/next 500 in 999ms :: {"message":"Error processing content"}

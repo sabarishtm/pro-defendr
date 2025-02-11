@@ -12,20 +12,31 @@ export async function analyzeContent(content: string, type: string): Promise<AIA
       messages: [
         {
           role: "system",
-          content: `You are a content moderation assistant. Analyze the following ${type} content and provide structured feedback about potential violations, risk level, and suggested actions. Respond with a JSON object containing: 
-          {
-            "category": "string - content category",
-            "confidence": "number between 0-1",
-            "suggestedAction": "approve/reject/review",
-            "flags": [{"type": "string", "severity": "number 1-10", "details": "string"}],
-            "risk_score": "number between 0-1"
-          }`
+          content: `You are a content moderation API that MUST ALWAYS respond with valid JSON. Never include explanatory text.
+
+Format your response exactly like this example:
+{
+  "category": "harassment",
+  "confidence": 0.95,
+  "suggestedAction": "reject",
+  "flags": [
+    {
+      "type": "hate_speech",
+      "severity": 8,
+      "details": "Contains explicit hate speech targeting protected group"
+    }
+  ],
+  "risk_score": 0.8
+}
+
+Remember: Only output the JSON object, nothing else. No explanations before or after.`
         },
         {
           role: "user",
-          content
+          content: `Analyze this ${type} content for moderation: ${content}`
         }
-      ]
+      ],
+      temperature: 0.1, // Lower temperature for more consistent outputs
     });
 
     const response = completion.choices[0].message.content;
@@ -33,7 +44,14 @@ export async function analyzeContent(content: string, type: string): Promise<AIA
       throw new Error("No response from OpenAI");
     }
 
-    const analysis = JSON.parse(response) as {
+    // Try to extract JSON if the response contains any non-JSON text
+    let jsonStr = response;
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[0];
+    }
+
+    const analysis = JSON.parse(jsonStr) as {
       category: string;
       confidence: number;
       suggestedAction: "approve" | "reject" | "review";
@@ -44,6 +62,11 @@ export async function analyzeContent(content: string, type: string): Promise<AIA
       }>;
       risk_score: number;
     };
+
+    // Validate the required fields
+    if (!analysis.category || !analysis.suggestedAction || !Array.isArray(analysis.flags)) {
+      throw new Error("Invalid analysis format");
+    }
 
     return {
       classification: {
