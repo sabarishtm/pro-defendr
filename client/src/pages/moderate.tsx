@@ -4,7 +4,8 @@ import { CaseDetails } from "@/components/moderation/case-details";
 import type { ContentItem, ModerationCase } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function ModeratePage({ params }: { params: { id: string } }) {
   const [, setLocation] = useLocation();
@@ -14,7 +15,7 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
   const contentId = parseInt(params.id);
   console.log("ModeratePage - Content ID:", contentId);
 
-  const { data: content, isLoading: isLoadingContent } = useQuery<ContentItem>({
+  const { data: content, isLoading: isLoadingContent, error: contentError } = useQuery<ContentItem>({
     queryKey: ["/api/content", contentId],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/content/${contentId}`);
@@ -67,10 +68,15 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
     );
   }
 
-  if (!content) {
+  if (!content || contentError) {
     return (
       <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold">Content not found</h1>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Content not found (ID: {contentId}). This content may have been deleted or is not accessible.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

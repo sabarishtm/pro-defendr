@@ -85,6 +85,29 @@ export function registerRoutes(app: Express) {
   });
 
   // Content queue
+  app.get("/api/content/:id", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const contentId = parseInt(req.params.id);
+      if (isNaN(contentId)) {
+        return res.status(400).json({ message: "Invalid content ID" });
+      }
+
+      const item = await storage.getContentItem(contentId);
+      if (!item) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      console.log("Sending content item:", item);
+      res.json(item);
+    } catch (error) {
+      console.error("Error fetching content item:", error);
+      res.status(500).json({ message: "Error fetching content item" });
+    }
+  });
+
   app.get("/api/content", async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
