@@ -106,6 +106,21 @@ export default function SidebarNav() {
       {user && (
         <div className="border-t">
           <div className="p-4">
+            {/* Sutherland Logo */}
+            <div className="flex justify-center mb-4">
+              <div className={cn(
+                "transform transition-all duration-300 ease-in-out origin-center",
+                isExpanded ? "rotate-0" : "-rotate-90"
+              )}>
+                <img 
+                  src="/logo.png" 
+                  alt="Sutherland Logo" 
+                  className="h-8 w-8 object-contain"
+                />
+              </div>
+            </div>
+
+            {/* User Info */}
             <div className="flex items-center relative h-8 overflow-hidden">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
                 {getInitials(user.name)}
