@@ -13,14 +13,12 @@ export const columns: ColumnDef<ContentItem>[] = [
     accessorKey: "content",
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="whitespace-nowrap"
-        >
+        <div className="flex items-center">
           Content
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+          {column.getCanSort() && (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </div>
       );
     },
     cell: ({ row }) => {
@@ -36,14 +34,12 @@ export const columns: ColumnDef<ContentItem>[] = [
     accessorKey: "type",
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="whitespace-nowrap"
-        >
+        <div className="flex items-center">
           Type
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+          {column.getCanSort() && (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </div>
       );
     },
     cell: ({ row }) => {
@@ -55,14 +51,12 @@ export const columns: ColumnDef<ContentItem>[] = [
     accessorKey: "priority",
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="whitespace-nowrap"
-        >
+        <div className="flex items-center">
           Priority
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+          {column.getCanSort() && (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </div>
       );
     },
     cell: ({ row }) => {
@@ -78,14 +72,12 @@ export const columns: ColumnDef<ContentItem>[] = [
     accessorKey: "status",
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="whitespace-nowrap"
-        >
+        <div className="flex items-center">
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+          {column.getCanSort() && (
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          )}
+        </div>
       );
     },
     cell: ({ row }) => {
