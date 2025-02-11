@@ -12,11 +12,14 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
   const queryClient = useQueryClient();
 
   const contentId = parseInt(params.id);
+  console.log("ModeratePage - Content ID:", contentId);
 
   const { data: content, isLoading: isLoadingContent } = useQuery<ContentItem>({
     queryKey: ["/api/content", contentId],
     enabled: !isNaN(contentId),
   });
+
+  console.log("ModeratePage - Fetched content:", content);
 
   const assignMutation = useMutation({
     mutationFn: async () => {
@@ -48,6 +51,8 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
     queryKey: ["/api/cases", contentId],
     enabled: !isNaN(contentId),
   });
+
+  console.log("ModeratePage - Fetched case:", case_);
 
   if (isLoadingContent || assignMutation.isPending) {
     return (
