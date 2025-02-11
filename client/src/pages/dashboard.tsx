@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import AgentStatus from "@/components/agent-status";
 import ContentQueue from "@/components/content-queue";
 import CaseDetails from "@/components/case-details";
 import PerformanceStats from "@/components/performance-stats";
+import type { ContentItem } from "@shared/schema";
 
 export default function Dashboard() {
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+
   const { data: user } = useQuery({
     queryKey: ["/api/users/me"],
   });
@@ -18,11 +22,11 @@ export default function Dashboard() {
       </header>
       <main className="flex-1 p-6 flex gap-6 overflow-auto">
         <div className="flex-1 flex flex-col gap-6">
-          <ContentQueue />
+          <ContentQueue onOpenModeration={setSelectedContent} />
           <PerformanceStats />
         </div>
         <div className="w-[400px]">
-          <CaseDetails />
+          {selectedContent && <CaseDetails contentItem={selectedContent} onClose={() => setSelectedContent(null)} />}
         </div>
       </main>
     </div>
