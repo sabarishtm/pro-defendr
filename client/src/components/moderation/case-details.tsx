@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentItem, ModerationCase } from "@shared/schema";
-import { ThumbsUp, ThumbsDown, AlertTriangle, Brain } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -23,6 +23,7 @@ export function CaseDetails({
 }: CaseDetailsProps) {
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { toast } = useToast();
 
   async function handleDecision(decision: "approve" | "reject") {
@@ -61,6 +62,25 @@ export function CaseDetails({
   // Safely access AI analysis data with null checks
   const aiAnalysis = contentItem.metadata?.aiAnalysis;
 
+  // Function to get image URL based on content type
+  const getImageContent = () => {
+    const content = contentItem.content;
+    if (!content) return null;
+
+    // Check if it's already a valid URL
+    try {
+      new URL(content);
+      return content;
+    } catch {
+      // If not a URL, assume it's base64 data
+      if (content.startsWith('data:image')) {
+        return content;
+      }
+      // If it's neither, return null
+      return null;
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -91,10 +111,10 @@ export function CaseDetails({
                     <span className="text-sm font-medium">Suggested Action:</span>
                     <Badge variant={
                       aiAnalysis.classification.suggestedAction === "approve" 
-                        ? "success" 
+                        ? "default"  
                         : aiAnalysis.classification.suggestedAction === "reject"
                         ? "destructive"
-                        : "warning"
+                        : "secondary"  
                     }>
                       {aiAnalysis.classification.suggestedAction}
                     </Badge>
@@ -134,12 +154,28 @@ export function CaseDetails({
             <div className="p-4 bg-muted rounded-lg">
               <p>{contentItem.content}</p>
             </div>
+          ) : contentItem.type === "image" ? (
+            <div className="relative">
+              {imageError ? (
+                <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
+                  <div className="text-center">
+                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">Failed to load image</p>
+                  </div>
+                </div>
+              ) : (
+                <img 
+                  src={getImageContent() || ''}
+                  alt="Content for review"
+                  className="w-full max-h-96 object-contain rounded-lg"
+                  onError={() => setImageError(true)}
+                />
+              )}
+            </div>
           ) : (
-            <img 
-              src={contentItem.content}
-              alt="Content for review"
-              className="w-full max-h-96 object-contain rounded-lg"
-            />
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Unsupported content type: {contentItem.type}</p>
+            </div>
           )}
 
           <Textarea
