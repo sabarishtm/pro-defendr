@@ -118,11 +118,11 @@ export default function SidebarNav() {
           <div className="p-4">
             {/* Sutherland Logo */}
             <div className="flex justify-center mb-4">
-              <div className="relative w-full aspect-square flex items-center justify-center">
+              <div className="relative w-full flex items-center justify-center">
                 <img
                   src="/logo.png"
                   alt="Sutherland Logo"
-                  className="w-full h-full object-contain transform-gpu transition-transform duration-300 ease-in-out origin-center"
+                  className="w-full h-auto object-contain transform-gpu transition-transform duration-300 ease-in-out origin-center"
                   style={{
                     transform: isExpanded ? 'none' : 'rotate(-90deg)',
                   }}
