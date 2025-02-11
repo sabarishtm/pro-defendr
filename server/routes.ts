@@ -122,6 +122,36 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Content not found" });
       }
 
+      // If content is pending and not assigned, assign it to the current user
+      if (item.status === "pending" && !item.assignedTo) {
+        // Create a new case or get existing one
+        const cases = await storage.getCases();
+        const existingCase = cases.find(c =>
+          c.contentId === contentId &&
+          c.agentId === userId &&
+          !c.decision
+        );
+
+        if (!existingCase) {
+          // Create new case
+          await storage.createCase({
+            contentId,
+            agentId: userId,
+            notes: null,
+            decision: null
+          });
+        }
+
+        // Assign content to user
+        await storage.updateContentItem(contentId, {
+          assignedTo: userId
+        });
+
+        // Refresh item data after assignment
+        const updatedItem = await storage.getContentItemWithAssignedUser(contentId);
+        return res.json(updatedItem);
+      }
+
       console.log("Sending content item:", item);
       res.json(item);
     } catch (error) {
@@ -256,9 +286,9 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error handling case:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      res.status(400).json({ 
-        message: "Invalid request", 
-        details: errorMessage 
+      res.status(400).json({
+        message: "Invalid request",
+        details: errorMessage
       });
     }
   });
@@ -315,7 +345,7 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error updating case decision:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Error updating case decision",
         details: errorMessage
       });
