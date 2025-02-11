@@ -41,7 +41,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   const { toast } = useToast();
 
-  const { data: items = [], isLoading } = useQuery<ContentItem[]>({
+  const { data, isLoading } = useQuery({
     queryKey: ["/api/content", { page, pageSize, sortField, sortOrder }],
     queryFn: async () => {
       const queryParams = new URLSearchParams({
@@ -50,10 +50,12 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         sortField,
         sortOrder
       });
-      return apiRequest("GET", `/api/content?${queryParams}`);
+      const response = await apiRequest("GET", `/api/content?${queryParams}`);
+      return Array.isArray(response) ? response : [];
     }
   });
 
+  const items = data || [];
   const totalItems = items.length;
   const totalPages = Math.ceil(totalItems / pageSize);
   const displayItems = items.slice((page - 1) * pageSize, page * pageSize);
@@ -81,7 +83,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const caseMutation = useMutation({
     mutationFn: async (data: { contentId: number; decision: string }) => {
       const res = await apiRequest("POST", "/api/cases", data);
-      return res.json();
+      return res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
