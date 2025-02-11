@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentItem, ModerationCase } from "@shared/schema";
-import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon, FileText, Video } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -23,7 +23,7 @@ export function CaseDetails({
 }: CaseDetailsProps) {
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
   const { toast } = useToast();
 
   async function handleDecision(decision: "approve" | "reject") {
@@ -62,8 +62,8 @@ export function CaseDetails({
   // Safely access AI analysis data with null checks
   const aiAnalysis = contentItem.metadata?.aiAnalysis;
 
-  // Function to get image URL based on content type
-  const getImageContent = () => {
+  // Function to get media URL based on content type
+  const getMediaContent = () => {
     const content = contentItem.content;
     if (!content) return null;
 
@@ -72,12 +72,91 @@ export function CaseDetails({
       new URL(content);
       return content;
     } catch {
-      // If not a URL, assume it's base64 data
-      if (content.startsWith('data:image')) {
+      // If not a URL, check for data URIs
+      if (content.startsWith('data:')) {
         return content;
       }
       // If it's neither, return null
       return null;
+    }
+  };
+
+  // Function to render content based on type
+  const renderContent = () => {
+    switch (contentItem.type) {
+      case "text":
+        return (
+          <div className="p-4 bg-muted rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Text Content</span>
+            </div>
+            <p className="whitespace-pre-wrap">{contentItem.content}</p>
+          </div>
+        );
+
+      case "image":
+        return (
+          <div className="relative">
+            {mediaError ? (
+              <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
+                <div className="text-center">
+                  <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Failed to load image</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Image Content</span>
+                </div>
+                <img 
+                  src={getMediaContent() || ''}
+                  alt="Content for review"
+                  className="w-full max-h-96 object-contain rounded-lg"
+                  onError={() => setMediaError(true)}
+                />
+              </div>
+            )}
+          </div>
+        );
+
+      case "video":
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Video className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Video Content</span>
+            </div>
+            {mediaError ? (
+              <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
+                <div className="text-center">
+                  <Video className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Failed to load video</p>
+                </div>
+              </div>
+            ) : (
+              <video
+                src={getMediaContent() || ''}
+                controls
+                className="w-full max-h-96 rounded-lg"
+                onError={() => setMediaError(true)}
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
+          </div>
+        );
+
+      default:
+        return (
+          <div className="p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Unsupported content type: {contentItem.type}
+            </p>
+          </div>
+        );
     }
   };
 
@@ -150,33 +229,7 @@ export function CaseDetails({
         )}
 
         <div className="space-y-4">
-          {contentItem.type === "text" ? (
-            <div className="p-4 bg-muted rounded-lg">
-              <p>{contentItem.content}</p>
-            </div>
-          ) : contentItem.type === "image" ? (
-            <div className="relative">
-              {imageError ? (
-                <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
-                  <div className="text-center">
-                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Failed to load image</p>
-                  </div>
-                </div>
-              ) : (
-                <img 
-                  src={getImageContent() || ''}
-                  alt="Content for review"
-                  className="w-full max-h-96 object-contain rounded-lg"
-                  onError={() => setImageError(true)}
-                />
-              )}
-            </div>
-          ) : (
-            <div className="p-4 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">Unsupported content type: {contentItem.type}</p>
-            </div>
-          )}
+          {renderContent()}
 
           <Textarea
             value={notes}
