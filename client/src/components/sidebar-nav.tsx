@@ -120,12 +120,9 @@ export default function SidebarNav() {
             <div className="flex justify-center mb-4">
               <div className="relative w-full flex items-center justify-center">
                 <img
-                  src="/logo.png"
+                  src={isExpanded ? "/logo.png" : "/logo-small.png"}
                   alt="Sutherland Logo"
-                  className="w-full object-contain transform-gpu transition-transform duration-300 ease-in-out"
-                  style={{
-                    transform: isExpanded ? "none" : "rotate(-90deg)",
-                  }}
+                  className="w-full object-contain transform-gpu transition-all duration-300 ease-in-out"
                 />
               </div>
             </div>
