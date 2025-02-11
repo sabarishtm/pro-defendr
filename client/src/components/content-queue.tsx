@@ -40,6 +40,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 // Update ContentItem type to include assignedUserName
 type ContentItemWithUser = ContentItem & { assignedUserName?: string };
@@ -50,7 +51,7 @@ interface QueueProps {
 
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
   // Sorting state
-  const [sortField, setSortField] = useState<keyof ContentItem>("priority");
+  const [sortField, setSortField] = useState<keyof ContentItem>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   // Pagination state
@@ -87,9 +88,8 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     },
   });
 
-  // Filter items
+  // Filter items based on content or type
   const filteredItems = items.filter(item =>
-    item.name?.toLowerCase().includes(filter.toLowerCase()) ||
     item.content.toLowerCase().includes(filter.toLowerCase()) ||
     item.type.toLowerCase().includes(filter.toLowerCase()) ||
     item.status.toLowerCase().includes(filter.toLowerCase())
@@ -100,9 +100,15 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     const aValue = a[sortField];
     const bValue = b[sortField];
 
-    if (aValue === bValue) return 0;
+    if (!aValue || !bValue) return 0;
 
     const direction = sortDirection === "asc" ? 1 : -1;
+
+    // Special handling for dates
+    if (sortField === "createdAt") {
+      return (new Date(aValue as string).getTime() - new Date(bValue as string).getTime()) * direction;
+    }
+
     return aValue < bValue ? -direction : direction;
   });
 
@@ -123,7 +129,6 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   // Helper function to get display name
   const getDisplayName = (item: ContentItem) => {
-    if (item.name) return item.name;
     if (item.type === "text") return item.content.slice(0, 15);
     // For media content, extract filename from path
     const fileName = item.content.split('/').pop() || '';
@@ -242,10 +247,11 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[140px]">Preview</TableHead>
-                <SortableHeader field="name">Content</SortableHeader>
+                <TableHead>Content</TableHead>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
                 <SortableHeader field="status">Status</SortableHeader>
+                <SortableHeader field="createdAt">Created At</SortableHeader>
                 <TableHead>Assigned To</TableHead>
                 <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
@@ -281,6 +287,13 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                     }>
                       {item.status}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {item.createdAt ? (
+                      format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
+                    ) : (
+                      "Unknown"
+                    )}
                   </TableCell>
                   <TableCell>
                     {item.assignedUserName ? (

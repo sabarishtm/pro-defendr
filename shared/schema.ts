@@ -37,6 +37,7 @@ export const contentItems = pgTable("content_items", {
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   priority: integer("priority").notNull().default(1),
   assignedTo: integer("assigned_to").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   metadata: jsonb("metadata").notNull().$type<{
     aiAnalysis?: AIAnalysis;
     originalMetadata: Record<string, unknown>;
