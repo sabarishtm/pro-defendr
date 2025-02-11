@@ -120,7 +120,7 @@ export default function SidebarNav() {
             <div className="flex justify-center mb-4">
               <div
                 className={cn(
-                  "transform transition-all duration-300 ease-in-out origin-center",
+                  "transform transition-all duration-300 ease-in-out origin-center w-48 h-48 flex items-center justify-center",
                   isExpanded ? "rotate-0" : "-rotate-90"
                 )}
               >
