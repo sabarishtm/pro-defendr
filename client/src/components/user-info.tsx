@@ -3,7 +3,11 @@ import type { User } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { UserCircle } from "lucide-react";
 
-export default function UserInfo() {
+interface UserInfoProps {
+  isExpanded: boolean;
+}
+
+export default function UserInfo({ isExpanded }: UserInfoProps) {
   const { data: user } = useQuery<User>({
     queryKey: ["/api/users/me"],
     staleTime: 0, // Ensure we always get fresh data
@@ -26,14 +30,16 @@ export default function UserInfo() {
       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
         <UserCircle className="w-5 h-5 text-primary" />
       </div>
-      <div className="flex flex-col">
-        <span className="text-sm font-medium">{user.name}</span>
-        <Badge variant="secondary" className={`text-xs ${roleColor}`}>
-          {user.role.split('_').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1)
-          ).join(' ')}
-        </Badge>
-      </div>
+      {isExpanded && (
+        <div className="flex flex-col overflow-hidden transition-all duration-300">
+          <span className="text-sm font-medium truncate">{user.name}</span>
+          <Badge variant="secondary" className={`text-xs ${roleColor}`}>
+            {user.role.split('_').map(word => 
+              word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ')}
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
