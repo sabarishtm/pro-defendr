@@ -58,28 +58,6 @@ export default function SidebarNav() {
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
-      {/* Logo Area */}
-      <div className="h-16 flex items-center justify-center border-b relative overflow-hidden">
-        <div className={cn(
-          "absolute inset-0 flex items-center transition-transform duration-300 ease-in-out px-4",
-          isExpanded ? "translate-x-0" : "-translate-x-16"
-        )}>
-          <Shield className="h-8 w-8 text-primary flex-shrink-0" />
-          <span className={cn(
-            "ml-3 text-xl font-bold transition-opacity duration-300 ease-in-out whitespace-nowrap",
-            isExpanded ? "opacity-100" : "opacity-0"
-          )}>
-            Defendr
-          </span>
-        </div>
-        <div className={cn(
-          "absolute inset-0 flex items-center justify-center transition-transform duration-300 ease-in-out",
-          isExpanded ? "translate-x-16" : "translate-x-0"
-        )}>
-          <Shield className="h-8 w-8 text-primary" />
-        </div>
-      </div>
-
       {/* Navigation Area */}
       <ScrollArea className="flex-1 px-2 py-2">
         <nav className="space-y-1">
@@ -106,6 +84,17 @@ export default function SidebarNav() {
       {user && (
         <div className="border-t">
           <div className="p-4">
+            {/* Logo with rotation */}
+            <div className="flex justify-center mb-4">
+              <div className={cn(
+                "transition-transform duration-300 ease-in-out",
+                isExpanded ? "rotate-0" : "-rotate-90"
+              )}>
+                <Shield className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+
+            {/* User Info */}
             <div className="flex items-center relative h-8 overflow-hidden">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
                 {getInitials(user.name)}
