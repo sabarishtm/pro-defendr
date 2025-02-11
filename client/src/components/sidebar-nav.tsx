@@ -122,7 +122,10 @@ export default function SidebarNav() {
                 <img
                   src={isExpanded ? "/logo.png" : "/logo-small.png"}
                   alt="Sutherland Logo"
-                  className="w-full object-contain transform-gpu transition-all duration-300 ease-in-out"
+                  className="w-full object-contain transition-all duration-300 ease-in-out"
+                  style={{
+                    maxWidth: isExpanded ? '100%' : '32px'
+                  }}
                 />
               </div>
             </div>
