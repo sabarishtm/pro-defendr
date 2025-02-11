@@ -127,7 +127,7 @@ export default function SidebarNav() {
                 <img
                   src="/logo.png"
                   alt="Sutherland Logo"
-                  className="h-32 object-contain lg:h-48"
+                  className="h-48 object-contain"
                 />
               </div>
             </div>
