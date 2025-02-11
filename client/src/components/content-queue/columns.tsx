@@ -1,0 +1,95 @@
+import { ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, Eye } from "lucide-react";
+import type { ContentItem } from "@shared/schema";
+
+export const columns: ColumnDef<ContentItem>[] = [
+  {
+    accessorKey: "content",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Content
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const content = row.getValue("content") as string;
+      return (
+        <div className="max-w-[500px] truncate">
+          {content}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "type",
+    header: "Type",
+    cell: ({ row }) => {
+      const type = row.getValue("type") as string;
+      return <Badge variant="outline">{type}</Badge>;
+    },
+  },
+  {
+    accessorKey: "priority",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Priority
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const priority = row.getValue("priority") as number;
+      return (
+        <Badge variant={priority > 1 ? "destructive" : "secondary"}>
+          {priority === 1 ? "Low" : "High"}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      return (
+        <Badge variant={
+          status === "approved" 
+            ? "secondary" 
+            : status === "rejected"
+            ? "destructive"
+            : "outline"
+        }>
+          {status}
+        </Badge>
+      );
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row, table }) => {
+      const item = row.original;
+      return (
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => table.options.meta?.onOpenModeration?.(item)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    },
+  },
+];
