@@ -8,7 +8,7 @@ interface TableMeta {
   onOpenModeration?: (item: ContentItem) => void;
 }
 
-export const columns: ColumnDef<ContentItem, unknown>[] = [
+export const columns: ColumnDef<ContentItem>[] = [
   {
     accessorKey: "content",
     header: ({ column }) => {

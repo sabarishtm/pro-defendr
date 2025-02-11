@@ -45,6 +45,7 @@ export function DataTable<TData>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  const [pageSize, setPageSize] = useState(10);
 
   const table = useReactTable({
     data,
@@ -62,6 +63,10 @@ export function DataTable<TData>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination: {
+        pageSize,
+        pageIndex: 0,
+      },
     },
     meta: {
       onOpenModeration,
@@ -160,8 +165,7 @@ export function DataTable<TData>({
       </div>
       <div className="flex items-center justify-between space-x-2">
         <div className="text-sm text-muted-foreground">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+          Showing {table.getRowModel().rows.length} of {data.length} items
         </div>
         <div className="flex items-center space-x-2">
           <Button
