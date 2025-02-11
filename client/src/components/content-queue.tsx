@@ -44,6 +44,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const { data, isLoading } = useQuery({
     queryKey: ["/api/content", { page, pageSize, sortField, sortOrder }],
     queryFn: async () => {
+      console.log("Fetching content with params:", { page, pageSize, sortField, sortOrder });
       const queryParams = new URLSearchParams({
         page: page.toString(),
         pageSize: pageSize.toString(),
@@ -51,11 +52,14 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         sortOrder
       });
       const response = await apiRequest("GET", `/api/content?${queryParams}`);
+      console.log("API Response:", response);
       return Array.isArray(response) ? response : [];
     }
   });
 
   const items = data || [];
+  console.log("Processed items:", items);
+
   const totalItems = items.length;
   const totalPages = Math.ceil(totalItems / pageSize);
   const displayItems = items.slice((page - 1) * pageSize, page * pageSize);
@@ -88,6 +92,17 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      toast({
+        title: "Decision recorded",
+        description: "The content has been processed successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to process content. Please try again.",
+      });
     },
   });
 
