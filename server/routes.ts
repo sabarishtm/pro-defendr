@@ -209,6 +209,7 @@ export function registerRoutes(app: Express) {
 
       const data = insertCaseSchema.parse({ ...req.body, agentId: userId });
       const newCase = await storage.createCase(data);
+      console.log("Created new case:", newCase);
 
       // Update content item status
       await storage.updateContentItem(data.contentId, {
@@ -218,7 +219,51 @@ export function registerRoutes(app: Express) {
 
       res.json(newCase);
     } catch (error) {
+      console.error("Error creating case:", error);
       res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Add a new endpoint to update case decisions
+  app.patch("/api/cases/:id/decision", async (req: Request, res: Response) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const caseId = parseInt(req.params.id);
+      if (isNaN(caseId)) {
+        return res.status(400).json({ message: "Invalid case ID" });
+      }
+
+      const { decision } = req.body;
+      if (!decision || !["approved", "rejected"].includes(decision)) {
+        return res.status(400).json({ message: "Invalid decision" });
+      }
+
+      const case_ = await storage.getCase(caseId);
+      if (!case_) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+
+      if (case_.agentId !== userId) {
+        return res.status(403).json({ message: "Not authorized to update this case" });
+      }
+
+      const updatedCase = await storage.updateCase(caseId, { 
+        decision,
+        status: "closed" 
+      });
+
+      // Update content item status
+      await storage.updateContentItem(case_.contentId, {
+        status: decision,
+        assignedTo: null, // Assuming the case is closed after decision
+      });
+
+      res.json(updatedCase);
+    } catch (error) {
+      console.error("Error updating case decision:", error);
+      res.status(500).json({ message: "Error updating case decision" });
     }
   });
 
