@@ -59,49 +59,33 @@ export function CaseDetails({
     }
   }
 
-  // Safely access AI analysis data with null checks
-  const aiAnalysis = contentItem.metadata?.aiAnalysis;
-
-  // Function to get media URL based on content type
-  const getMediaContent = () => {
-    const content = contentItem.content;
-    if (!content) return null;
-
-    // Check if it's already a valid URL
-    try {
-      new URL(content);
-      return content;
-    } catch {
-      // If not a URL, check for data URIs
-      if (content.startsWith('data:')) {
-        return content;
-      }
-      // If it's neither, return null
-      return null;
-    }
-  };
-
   // Function to render content based on type
   const renderContent = () => {
-    const contentType = contentItem.type?.toLowerCase() ?? 'text';
+    const type = contentItem.type?.toLowerCase() || 'text';
 
-    switch (contentType) {
+    switch (type) {
       case "text":
         return (
-          <div className="p-4 bg-muted rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Text Content</span>
             </div>
-            <div className="mt-4">
-              <p className="whitespace-pre-wrap text-base">{contentItem.content}</p>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="whitespace-pre-wrap text-base">
+                {contentItem.content}
+              </p>
             </div>
           </div>
         );
 
       case "image":
         return (
-          <div className="relative">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Image Content</span>
+            </div>
             {mediaError ? (
               <div className="flex items-center justify-center h-[300px] bg-muted rounded-lg">
                 <div className="text-center">
@@ -110,25 +94,19 @@ export function CaseDetails({
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Image Content</span>
-                </div>
-                <img 
-                  src={getMediaContent() || ''}
-                  alt="Content for review"
-                  className="w-full max-h-96 object-contain rounded-lg"
-                  onError={() => setMediaError(true)}
-                />
-              </div>
+              <img 
+                src={contentItem.content} 
+                alt="Content for review"
+                className="w-full max-h-96 object-contain rounded-lg"
+                onError={() => setMediaError(true)}
+              />
             )}
           </div>
         );
 
       case "video":
         return (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Video className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Video Content</span>
@@ -142,7 +120,7 @@ export function CaseDetails({
               </div>
             ) : (
               <video
-                src={getMediaContent() || ''}
+                src={contentItem.content}
                 controls
                 className="w-full max-h-96 rounded-lg"
                 onError={() => setMediaError(true)}
@@ -154,12 +132,20 @@ export function CaseDetails({
         );
 
       default:
-      case "unknown":
         return (
-          <div className="p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              Unsupported content type: {contentItem?.type}
-            </p>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Unknown Content Type</span>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Content type not supported: {type}
+              </p>
+              <p className="mt-2 text-base whitespace-pre-wrap">
+                {contentItem.content}
+              </p>
+            </div>
           </div>
         );
     }
@@ -180,8 +166,8 @@ export function CaseDetails({
           </Alert>
         )}
 
-        {/* Only show AI analysis if it exists */}
-        {aiAnalysis && (
+        {/* AI Analysis Section */}
+        {contentItem.metadata?.aiAnalysis && (
           <div className="space-y-4 p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-primary" />
@@ -189,36 +175,40 @@ export function CaseDetails({
             </div>
 
             <div className="grid gap-4">
-              {aiAnalysis.classification && (
+              {contentItem.metadata.aiAnalysis.classification && (
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Suggested Action:</span>
                     <Badge variant={
-                      aiAnalysis.classification.suggestedAction === "approve" 
+                      contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve" 
                         ? "default"  
-                        : aiAnalysis.classification.suggestedAction === "reject"
+                        : contentItem.metadata.aiAnalysis.classification.suggestedAction === "reject"
                         ? "destructive"
                         : "secondary"  
                     }>
-                      {aiAnalysis.classification.suggestedAction}
+                      {contentItem.metadata.aiAnalysis.classification.suggestedAction}
                     </Badge>
                   </div>
 
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>Confidence Score</span>
-                      <span>{Math.round(aiAnalysis.classification.confidence * 100)}%</span>
+                      <span>
+                        {Math.round(contentItem.metadata.aiAnalysis.classification.confidence * 100)}%
+                      </span>
                     </div>
-                    <Progress value={aiAnalysis.classification.confidence * 100} />
+                    <Progress 
+                      value={contentItem.metadata.aiAnalysis.classification.confidence * 100}
+                    />
                   </div>
                 </>
               )}
 
-              {aiAnalysis.contentFlags && aiAnalysis.contentFlags.length > 0 && (
+              {contentItem.metadata.aiAnalysis.contentFlags?.length > 0 && (
                 <div className="space-y-2">
                   <span className="text-sm font-medium">Content Flags:</span>
                   <div className="space-y-1">
-                    {aiAnalysis.contentFlags.map((flag, index) => (
+                    {contentItem.metadata.aiAnalysis.contentFlags.map((flag, index) => (
                       <div key={index} className="flex items-center justify-between text-sm">
                         <span>{flag.type}</span>
                         <Badge variant="outline">
@@ -233,6 +223,7 @@ export function CaseDetails({
           </div>
         )}
 
+        {/* Content Display */}
         <div className="space-y-4">
           {renderContent()}
 
