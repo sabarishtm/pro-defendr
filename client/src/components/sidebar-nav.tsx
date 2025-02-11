@@ -124,12 +124,12 @@ export default function SidebarNav() {
                   alt="Sutherland Logo"
                   className="w-full object-contain transform-gpu transition-transform duration-300 ease-in-out"
                   style={{
-                    transform: isExpanded ? 'none' : 'rotate(-90deg)',
+                    transform: isExpanded ? "none" : "rotate(-90deg)",
                   }}
                 />
               </div>
             </div>
-
+            <Separator className="my-2" />
             {/* User Info */}
             <div className="flex items-center relative h-8 overflow-hidden">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
