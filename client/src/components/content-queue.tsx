@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle, XCircle, ArrowUpDown, Eye, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, ArrowUpDown, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -41,29 +41,23 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   const { toast } = useToast();
 
-  const { data: contentItems = [], isLoading } = useQuery<ContentItem[]>({
+  const { data: items = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content"],
     queryFn: async () => {
-      try {
-        const response = await apiRequest("GET", "/api/content");
-        // Assuming the API now returns an array of ContentItem
-        return Array.isArray(response) ? response : [];
-      } catch (error) {
-        console.error("Error fetching content:", error);
+      const response = await apiRequest("GET", "/api/content");
+      console.log("API Response:", response);
+      if (!Array.isArray(response)) {
+        console.error("Invalid response format:", response);
         return [];
       }
+      return response;
     }
   });
 
-  // Client-side sorting and pagination
-  const sortedItems = [...contentItems].sort((a, b) => {
+  // Sort items
+  const sortedItems = [...items].sort((a, b) => {
     if (sortField === "priority") {
       return sortOrder === "asc" ? a.priority - b.priority : b.priority - a.priority;
-    }
-    if (sortField === "content") {
-      return sortOrder === "asc"
-        ? a.content.localeCompare(b.content)
-        : b.content.localeCompare(a.content);
     }
     return 0;
   });
@@ -101,7 +95,6 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               <SelectItem value="5">5 per page</SelectItem>
               <SelectItem value="10">10 per page</SelectItem>
               <SelectItem value="20">20 per page</SelectItem>
-              <SelectItem value="50">50 per page</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -110,27 +103,9 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer" onClick={() => {
-                if (sortField === "content") {
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                } else {
-                  setSortField("content");
-                  setSortOrder("asc");
-                }
-              }}>
-                Content <ArrowUpDown className="inline w-4 h-4 ml-1" />
-              </TableHead>
+              <TableHead>Content</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead className="cursor-pointer" onClick={() => {
-                if (sortField === "priority") {
-                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                } else {
-                  setSortField("priority");
-                  setSortOrder("asc");
-                }
-              }}>
-                Priority <ArrowUpDown className="inline w-4 h-4 ml-1" />
-              </TableHead>
+              <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -138,18 +113,16 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
           <TableBody>
             {displayItems.map((item) => (
               <TableRow key={item.id}>
-                <TableCell className="font-medium max-w-xs truncate">
+                <TableCell className="font-medium max-w-md truncate">
                   {item.content}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{item.type}</Badge>
                 </TableCell>
                 <TableCell>
-                  {item.priority === 1 ? (
-                    <Badge variant="secondary">Low</Badge>
-                  ) : (
-                    <Badge variant="destructive">High</Badge>
-                  )}
+                  <Badge variant={item.priority > 1 ? "destructive" : "secondary"}>
+                    {item.priority === 1 ? "Low" : "High"}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   {item.status === "pending" ? (

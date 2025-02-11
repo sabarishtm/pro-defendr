@@ -55,7 +55,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getContentItems(): Promise<ContentItem[]> {
-    return db.select().from(contentItems);
+    const items = await db
+      .select()
+      .from(contentItems)
+      .orderBy(contentItems.priority);
+    console.log("Fetched content items:", items);
+    return items;
   }
 
   async getContentItem(id: number): Promise<ContentItem | undefined> {
