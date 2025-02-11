@@ -21,12 +21,16 @@ export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
     queryKey: ["/api/content"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/content");
-      console.log("API Response:", response);
-      if (!Array.isArray(response)) {
-        console.error("Invalid response format:", response);
-        return [];
+      if (response instanceof Response) {
+        const data = await response.json();
+        console.log("Parsed API Response:", data);
+        if (!Array.isArray(data)) {
+          console.error("Invalid response format:", data);
+          return [];
+        }
+        return data;
       }
-      return response;
+      return response; // If it's already parsed JSON
     }
   });
 
