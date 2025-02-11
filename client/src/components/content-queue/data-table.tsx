@@ -54,12 +54,14 @@ export function DataTable<TData>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    enableSorting: true,
+    enableFiltering: true,
+    enableGlobalFilter: true,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: "includesString",
     state: {
       sorting,
       columnFilters,
@@ -82,9 +84,9 @@ export function DataTable<TData>({
         <div className="flex items-center gap-2 flex-1">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search all columns..."
+            placeholder="Search content, type, status..."
             value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
+            onChange={(event) => setGlobalFilter(String(event.target.value))}
             className="max-w-sm"
           />
         </div>

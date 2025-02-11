@@ -20,7 +20,7 @@ export const columns: ColumnDef<ContentItem>[] = [
           Content
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
       const content = row.getValue("content") as string;
@@ -30,8 +30,8 @@ export const columns: ColumnDef<ContentItem>[] = [
         </div>
       );
     },
-    sortingFn: "text",
-    filterFn: "includesString",
+    enableSorting: true,
+    enableGlobalFilter: true,
   },
   {
     accessorKey: "type",
@@ -44,14 +44,14 @@ export const columns: ColumnDef<ContentItem>[] = [
           Type
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
       const type = row.getValue("type") as string;
       return <Badge variant="outline">{type}</Badge>;
     },
-    sortingFn: "text",
-    filterFn: "includesString",
+    enableSorting: true,
+    enableGlobalFilter: true,
   },
   {
     accessorKey: "priority",
@@ -64,7 +64,7 @@ export const columns: ColumnDef<ContentItem>[] = [
           Priority
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
       const priority = row.getValue("priority") as number;
@@ -74,7 +74,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
-    sortingFn: "number",
+    enableSorting: true,
   },
   {
     accessorKey: "status",
@@ -87,7 +87,7 @@ export const columns: ColumnDef<ContentItem>[] = [
           Status
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
@@ -103,8 +103,8 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
-    sortingFn: "text",
-    filterFn: "includesString",
+    enableSorting: true,
+    enableGlobalFilter: true,
   },
   {
     id: "actions",
