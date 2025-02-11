@@ -166,10 +166,20 @@ export function registerRoutes(app: Express) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     try {
+      // Get user to check role and permissions
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(401).json({ message: "User not found" });
+
+      // Only allow content viewing for roles with REVIEW_CONTENT permission
+      checkPermission(user.role, Permission.REVIEW_CONTENT);
+
       const items = await storage.getContentItemsWithAssignedUsers();
       console.log("Sending content items:", items);
       res.json(items);
     } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
       console.error("Error fetching content items:", error);
       res.status(500).json({ message: "Error fetching content items" });
     }
@@ -571,6 +581,31 @@ export function registerRoutes(app: Express) {
         return res.status(403).json({ message: error.message });
       }
       res.status(400).json({ message: "Failed to create user" });
+    }
+  });
+
+  // Add sample content creation endpoint for testing
+  app.post("/api/content/test", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const testContent = await storage.createContentItem({
+        content: "Test content for moderation",
+        type: "text",
+        priority: 1,
+        metadata: {
+          originalMetadata: {
+            source: "Test"
+          }
+        }
+      });
+
+      console.log("Created test content:", testContent);
+      res.json(testContent);
+    } catch (error) {
+      console.error("Error creating test content:", error);
+      res.status(500).json({ message: "Error creating test content" });
     }
   });
 
