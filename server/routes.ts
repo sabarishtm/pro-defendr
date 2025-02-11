@@ -56,27 +56,13 @@ export function registerRoutes(app: Express) {
       const data = loginSchema.parse(req.body);
       const user = await storage.getUserByUsername(data.username);
 
-      if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      // Add more detailed logging
-      console.log("Login attempt:", {
-        username: data.username,
-        providedPassword: data.password,
-        storedPassword: user.password,
-        passwordMatch: data.password === user.password
-      });
-
-      if (user.password !== data.password) {
+      if (!user || user.password !== data.password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       req.session.userId = user.id;
-      console.log("Login successful, session:", req.session);
       return res.json({ user: { ...user, password: undefined } });
     } catch (error) {
-      console.error("Login error:", error);
       return res.status(400).json({ message: "Invalid request" });
     }
   });
@@ -153,7 +139,6 @@ export function registerRoutes(app: Express) {
         return res.json(updatedItem);
       }
 
-      console.log("Sending content item:", item);
       res.json(item);
     } catch (error) {
       console.error("Error fetching content item:", error);
@@ -166,15 +151,12 @@ export function registerRoutes(app: Express) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     try {
-      // Get user to check role and permissions
       const user = await storage.getUser(userId);
       if (!user) return res.status(401).json({ message: "User not found" });
 
-      // Only allow content viewing for roles with REVIEW_CONTENT permission
       checkPermission(user.role, Permission.REVIEW_CONTENT);
 
       const items = await storage.getContentItemsWithAssignedUsers();
-      console.log("Sending content items:", items);
       res.json(items);
     } catch (error) {
       if (error instanceof PermissionError) {
@@ -257,19 +239,16 @@ export function registerRoutes(app: Express) {
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      console.log("Received case creation request:", { ...req.body, userId });
       const data = insertCaseSchema.parse({ ...req.body, agentId: userId });
 
       // Check if a case already exists for this content and user
       const cases = await storage.getCases();
-      console.log("Existing cases:", cases);
 
       const existingCase = cases.find(c =>
         c.contentId === data.contentId &&
         c.agentId === userId &&
         !c.decision // Only consider undecided cases
       );
-      console.log("Found existing case:", existingCase);
 
       let caseToUpdate;
       if (existingCase) {
@@ -277,7 +256,6 @@ export function registerRoutes(app: Express) {
       } else {
         // Create new case if none exists
         caseToUpdate = await storage.createCase(data);
-        console.log("Created new case:", caseToUpdate);
       }
 
       // If decision is provided, update it immediately
@@ -287,7 +265,6 @@ export function registerRoutes(app: Express) {
           status: "closed",
           notes: data.notes
         });
-        console.log("Updated case with decision:", caseToUpdate);
 
         // Update content item status
         await storage.updateContentItem(data.contentId, {
@@ -301,7 +278,6 @@ export function registerRoutes(app: Express) {
         });
       }
 
-      console.log("Case operation completed:", caseToUpdate);
       res.json(caseToUpdate);
     } catch (error) {
       console.error("Error handling case:", error);
@@ -322,7 +298,6 @@ export function registerRoutes(app: Express) {
       checkPermission(user.role, Permission.REVIEW_CONTENT);
 
       const data = decisionSchema.parse(req.body);
-      console.log("Parsed decision data:", data);
 
       // Additional check for review decisions
       if (data.decision === "review" && user.role === UserRole.AGENT) {
@@ -333,14 +308,12 @@ export function registerRoutes(app: Express) {
 
       // Find or create case
       const cases = await storage.getCases();
-      console.log("Found cases:", cases);
 
       const existingCase = cases.find(c =>
         c.contentId === data.contentId &&
         c.agentId === userId &&
         !c.decision // Only consider undecided cases
       );
-      console.log("Existing case:", existingCase);
 
       let updatedCase;
       if (existingCase) {
@@ -359,7 +332,6 @@ export function registerRoutes(app: Express) {
           status: "closed" // Set status to closed for new cases with decisions
         });
       }
-      console.log("Updated/Created case:", updatedCase);
 
       // Update content item status to match the decision
       const contentStatus =
@@ -372,7 +344,6 @@ export function registerRoutes(app: Express) {
         assignedTo: data.decision === "review" ? null : null, // Release assignment after decision
       });
 
-      console.log("Decision applied successfully:", updatedCase);
       res.json(updatedCase);
     } catch (error) {
       if (error instanceof PermissionError) {
@@ -601,7 +572,6 @@ export function registerRoutes(app: Express) {
         }
       });
 
-      console.log("Created test content:", testContent);
       res.json(testContent);
     } catch (error) {
       console.error("Error creating test content:", error);
