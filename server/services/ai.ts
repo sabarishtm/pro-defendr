@@ -43,6 +43,8 @@ Every field is required and must follow these types exactly.`
       throw new Error("No response from OpenAI");
     }
 
+    console.log("Raw OpenAI response:", response);
+
     const analysis = JSON.parse(response) as {
       category: string;
       confidence: number;
@@ -54,6 +56,8 @@ Every field is required and must follow these types exactly.`
       }>;
       risk_score: number;
     };
+
+    console.log("Parsed analysis:", JSON.stringify(analysis, null, 2));
 
     // Validate the required fields
     if (!analysis.category || !analysis.suggestedAction || !Array.isArray(analysis.flags)) {
@@ -70,7 +74,7 @@ Every field is required and must follow these types exactly.`
       severity: Math.max(1, Math.min(10, flag.severity))
     }));
 
-    return {
+    const result: AIAnalysis = {
       classification: {
         category: analysis.category,
         confidence: analysis.confidence,
@@ -79,6 +83,10 @@ Every field is required and must follow these types exactly.`
       contentFlags: analysis.flags,
       riskScore: analysis.risk_score,
     };
+
+    console.log("Final processed result:", JSON.stringify(result, null, 2));
+
+    return result;
   } catch (error) {
     console.error("Error analyzing content:", error);
     throw new Error("Failed to analyze content");
