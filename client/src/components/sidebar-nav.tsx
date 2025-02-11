@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   LayoutDashboard,
+  InboxIcon,
+  BarChart2,
   Users,
   Settings,
   LogOut,
@@ -12,6 +14,8 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Moderation Queue", href: "/queue", icon: InboxIcon },
+  { name: "Reports", href: "/reports", icon: BarChart2 },
   { name: "Team", href: "/team", icon: Users },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
