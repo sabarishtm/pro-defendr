@@ -76,10 +76,10 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   // Search and filter state
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filters>({
-    type: "",
-    status: "",
-    priority: "",
-    assignedTo: "",
+    type: "all",
+    status: "all",
+    priority: "all",
+    assignedTo: "all",
     dateFrom: null,
     dateTo: null,
   });
@@ -121,11 +121,11 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
       item.type.toLowerCase().includes(search.toLowerCase()) ||
       item.status.toLowerCase().includes(search.toLowerCase());
 
-    const matchesType = !filters.type || item.type === filters.type;
-    const matchesStatus = !filters.status || item.status === filters.status;
-    const matchesPriority = !filters.priority || 
-      (filters.priority === "high" ? item.priority > 1 : item.priority === 1);
-    const matchesAssignee = !filters.assignedTo || 
+    const matchesType = filters.type === "all" || item.type === filters.type;
+    const matchesStatus = filters.status === "all" || item.status === filters.status;
+    const matchesPriority = filters.priority === "all" || 
+      (filters.priority === "high" ? item.priority > 1 : filters.priority === "low" && item.priority === 1);
+    const matchesAssignee = filters.assignedTo === "all" || 
       (filters.assignedTo === "unassigned" ? !item.assignedTo : 
        item.assignedUserName?.toLowerCase() === filters.assignedTo.toLowerCase());
 
@@ -265,7 +265,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   <SelectValue placeholder="Content Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   {uniqueTypes.map(type => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
@@ -282,7 +282,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Statuses</SelectItem>
+                  <SelectItem value="all">All Statuses</SelectItem>
                   {uniqueStatuses.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
@@ -299,7 +299,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Priorities</SelectItem>
+                  <SelectItem value="all">All Priorities</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="high">High</SelectItem>
                 </SelectContent>
@@ -315,7 +315,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   <SelectValue placeholder="Assigned To" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Assignees</SelectItem>
+                  <SelectItem value="all">All Assignees</SelectItem>
                   <SelectItem value="unassigned">Unassigned</SelectItem>
                   {uniqueAssignees.map(name => (
                     <SelectItem key={name} value={name}>{name}</SelectItem>
@@ -365,10 +365,10 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                 variant="outline"
                 onClick={() => {
                   setFilters({
-                    type: "",
-                    status: "",
-                    priority: "",
-                    assignedTo: "",
+                    type: "all",
+                    status: "all",
+                    priority: "all",
+                    assignedTo: "all",
                     dateFrom: null,
                     dateTo: null,
                   });
