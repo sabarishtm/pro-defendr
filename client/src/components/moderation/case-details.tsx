@@ -113,11 +113,11 @@ export function CaseDetails({
               </div>
             ) : (
               <>
-                <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
+                <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
                   <img 
                     src={contentItem.content} 
                     alt="Content for review"
-                    className="w-full max-h-[500px] object-contain"
+                    className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
                     style={getBlurStyle()}
                     onError={() => setMediaError(true)}
                   />
@@ -179,11 +179,11 @@ export function CaseDetails({
               </div>
             ) : (
               <>
-                <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
+                <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
                   <video
                     src={contentItem.content}
                     controls
-                    className="w-full max-h-[500px]"
+                    className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
                     style={getBlurStyle()}
                     onError={() => setMediaError(true)}
                   >
