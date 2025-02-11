@@ -1,0 +1,28 @@
+2:06:55 AM [express] GET /api/cases 304 in 139ms :: [{"id":1,"contentId":1,"agentId":1,"status":"ope…
+Error analyzing content: Error: Invalid analysis format
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:46:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+Error processing content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:60:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:94:26)
+2:07:03 AM [express] GET /api/content/next 500 in 1389ms :: {"message":"Error processing content"}
+Error analyzing content: Error: Invalid analysis format
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:46:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:121:24)
+Error creating content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:60:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:121:24)
+2:07:17 AM [express] POST /api/content 400 in 6882ms :: {"message":"Failed to create content"}
+Error analyzing content: Error: Invalid analysis format
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:46:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:121:24)
+Error creating content: Error: Failed to analyze content
+    at analyzeContent (/home/runner/workspace/server/services/ai.ts:60:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:121:24)
+2:07:52 AM [express] POST /api/content 400 in 2834ms :: {"message":"Failed to create content"}

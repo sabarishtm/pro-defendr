@@ -13,7 +13,21 @@ export async function analyzeContent(content: string, type: string): Promise<AIA
       messages: [
         {
           role: "system",
-          content: `You are a content moderation API. Analyze content and return a JSON object with moderation details.`
+          content: `You are a content moderation API. You must analyze content and return a JSON object with the following required structure and fields:
+{
+  "category": "string (e.g., spam, harassment, violence, adult)",
+  "confidence": "number between 0 and 1",
+  "suggestedAction": "one of: approve, reject, review",
+  "flags": [
+    {
+      "type": "string describing violation type",
+      "severity": "number between 1 and 10",
+      "details": "string explaining the issue"
+    }
+  ],
+  "risk_score": "number between 0 and 1"
+}
+Every field is required and must follow these types exactly.`
         },
         {
           role: "user",
@@ -45,6 +59,16 @@ export async function analyzeContent(content: string, type: string): Promise<AIA
     if (!analysis.category || !analysis.suggestedAction || !Array.isArray(analysis.flags)) {
       throw new Error("Invalid analysis format");
     }
+
+    // Ensure risk_score and confidence are numbers between 0 and 1
+    analysis.risk_score = Math.max(0, Math.min(1, analysis.risk_score));
+    analysis.confidence = Math.max(0, Math.min(1, analysis.confidence));
+
+    // Ensure flag severity is between 1 and 10
+    analysis.flags = analysis.flags.map(flag => ({
+      ...flag,
+      severity: Math.max(1, Math.min(10, flag.severity))
+    }));
 
     return {
       classification: {
