@@ -103,7 +103,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteContentItem(id: number): Promise<void> {
-    await db.delete(contentItems).where(eq(contentItems.id, id));
+    // First delete all related cases, then delete the content item in a transaction
+    await db.transaction(async (tx) => {
+      // Delete all cases associated with this content
+      await tx.delete(cases).where(eq(cases.contentId, id));
+      // Then delete the content item
+      await tx.delete(contentItems).where(eq(contentItems.id, id));
+    });
   }
 
   async getCases(): Promise<Case[]> {
