@@ -34,7 +34,7 @@ export function CaseDetails({
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  async function handleDecision(decision: "approve" | "reject") {
+  async function handleDecision(decision: "approve" | "reject" | "review") {
     try {
       setIsSubmitting(true);
 
@@ -50,7 +50,7 @@ export function CaseDetails({
 
       toast({
         title: "Decision recorded",
-        description: `Content has been ${decision === "approve" ? "approved" : "rejected"}.`
+        description: `Content has been ${decision === "approve" ? "approved" : decision === "reject" ? "rejected" : "sent for secondary review"}.`
       });
 
       setLocation("/dashboard");
@@ -341,26 +341,33 @@ export function CaseDetails({
               className="min-h-[100px]"
             />
 
-            <div className="flex gap-4">
-              <Button
-                size="lg"
-                variant="outline"
-                className="flex-1"
-                onClick={() => handleDecision("approve")}
-                disabled={isSubmitting}
-              >
-                <ThumbsUp className="mr-2 h-4 w-4" />
-                Approve
-              </Button>
+            <div className="flex justify-end gap-3">
               <Button
                 size="lg"
                 variant="destructive"
-                className="flex-1"
                 onClick={() => handleDecision("reject")}
                 disabled={isSubmitting}
               >
                 <ThumbsDown className="mr-2 h-4 w-4" />
-                Reject
+                Reject Content
+              </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => handleDecision("review")}
+                disabled={isSubmitting}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Secondary Review
+              </Button>
+              <Button
+                size="lg"
+                variant="default"
+                onClick={() => handleDecision("approve")}
+                disabled={isSubmitting}
+              >
+                <ThumbsUp className="mr-2 h-4 w-4" />
+                Approve Content
               </Button>
             </div>
           </div>
