@@ -42,27 +42,40 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const { toast } = useToast();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["/api/content", { page, pageSize, sortField, sortOrder }],
+    queryKey: ["/api/content"],
     queryFn: async () => {
-      console.log("Fetching content with params:", { page, pageSize, sortField, sortOrder });
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-        sortField,
-        sortOrder
-      });
-      const response = await apiRequest("GET", `/api/content?${queryParams}`);
-      console.log("API Response:", response);
-      return Array.isArray(response) ? response : [];
+      try {
+        const response = await apiRequest("GET", "/api/content");
+        console.log("Content API Response:", response);
+        return Array.isArray(response) ? response : [];
+      } catch (error) {
+        console.error("Error fetching content:", error);
+        return [];
+      }
     }
   });
 
   const items = data || [];
-  console.log("Processed items:", items);
+  console.log("Content Items:", items);
 
-  const totalItems = items.length;
+  // Client-side sorting
+  const sortedItems = [...items].sort((a, b) => {
+    if (sortField === "content") {
+      return sortOrder === "asc" 
+        ? a.content.localeCompare(b.content)
+        : b.content.localeCompare(a.content);
+    }
+    if (sortField === "priority") {
+      return sortOrder === "asc"
+        ? a.priority - b.priority
+        : b.priority - a.priority;
+    }
+    return 0;
+  });
+
+  const totalItems = sortedItems.length;
   const totalPages = Math.ceil(totalItems / pageSize);
-  const displayItems = items.slice((page - 1) * pageSize, page * pageSize);
+  const displayItems = sortedItems.slice((page - 1) * pageSize, page * pageSize);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -86,8 +99,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   const caseMutation = useMutation({
     mutationFn: async (data: { contentId: number; decision: string }) => {
-      const res = await apiRequest("POST", "/api/cases", data);
-      return res;
+      return await apiRequest("POST", "/api/cases", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
