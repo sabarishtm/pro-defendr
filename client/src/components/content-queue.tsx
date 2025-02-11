@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle, XCircle, ArrowUpDown, Eye } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -38,8 +38,6 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const [pageSize, setPageSize] = useState(10);
   const [sortField, setSortField] = useState<string>("priority");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  const { toast } = useToast();
 
   const { data: items = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content"],
