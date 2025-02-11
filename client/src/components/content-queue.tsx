@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ContentItem } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
@@ -36,17 +36,17 @@ interface QueueProps {
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortField, setSortField] = useState<string>("createdAt");
+  const [sortField, setSortField] = useState<string>("priority");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const { toast } = useToast();
 
-  const { data, isLoading } = useQuery({
+  const { data: contentItems = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content"],
     queryFn: async () => {
       try {
         const response = await apiRequest("GET", "/api/content");
-        console.log("Content API Response:", response);
+        // Assuming the API now returns an array of ContentItem
         return Array.isArray(response) ? response : [];
       } catch (error) {
         console.error("Error fetching content:", error);
@@ -55,20 +55,15 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     }
   });
 
-  const items = data || [];
-  console.log("Content Items:", items);
-
-  // Client-side sorting
-  const sortedItems = [...items].sort((a, b) => {
+  // Client-side sorting and pagination
+  const sortedItems = [...contentItems].sort((a, b) => {
+    if (sortField === "priority") {
+      return sortOrder === "asc" ? a.priority - b.priority : b.priority - a.priority;
+    }
     if (sortField === "content") {
-      return sortOrder === "asc" 
+      return sortOrder === "asc"
         ? a.content.localeCompare(b.content)
         : b.content.localeCompare(a.content);
-    }
-    if (sortField === "priority") {
-      return sortOrder === "asc"
-        ? a.priority - b.priority
-        : b.priority - a.priority;
     }
     return 0;
   });
@@ -77,58 +72,15 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const totalPages = Math.ceil(totalItems / pageSize);
   const displayItems = sortedItems.slice((page - 1) * pageSize, page * pageSize);
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/content/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      toast({
-        title: "Content deleted",
-        description: "The content item has been removed from the queue.",
-      });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete content. Please try again.",
-      });
-    },
-  });
-
-  const caseMutation = useMutation({
-    mutationFn: async (data: { contentId: number; decision: string }) => {
-      return await apiRequest("POST", "/api/cases", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
-      toast({
-        title: "Decision recorded",
-        description: "The content has been processed successfully.",
-      });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to process content. Please try again.",
-      });
-    },
-  });
-
-  function handleSort(field: string) {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  }
-
   if (isLoading) {
-    return <div>Loading queue...</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Content Queue</CardTitle>
+          <CardDescription>Loading content items...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
 
   return (
@@ -138,7 +90,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
           <div>
             <CardTitle>Content Queue</CardTitle>
             <CardDescription>
-              Review and moderate content items in the queue
+              Review and moderate content items in the queue ({totalItems} items)
             </CardDescription>
           </div>
           <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(Number(v))}>
@@ -158,18 +110,28 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("content")}>
+              <TableHead className="cursor-pointer" onClick={() => {
+                if (sortField === "content") {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                } else {
+                  setSortField("content");
+                  setSortOrder("asc");
+                }
+              }}>
                 Content <ArrowUpDown className="inline w-4 h-4 ml-1" />
               </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("type")}>
-                Type <ArrowUpDown className="inline w-4 h-4 ml-1" />
-              </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("priority")}>
+              <TableHead>Type</TableHead>
+              <TableHead className="cursor-pointer" onClick={() => {
+                if (sortField === "priority") {
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                } else {
+                  setSortField("priority");
+                  setSortOrder("asc");
+                }
+              }}>
                 Priority <ArrowUpDown className="inline w-4 h-4 ml-1" />
               </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort("status")}>
-                Status <ArrowUpDown className="inline w-4 h-4 ml-1" />
-              </TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -218,43 +180,6 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                         <Eye className="w-4 h-4" />
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        caseMutation.mutate({
-                          contentId: item.id,
-                          decision: "approved",
-                        })
-                      }
-                      disabled={item.status !== "pending"}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        caseMutation.mutate({
-                          contentId: item.id,
-                          decision: "rejected",
-                        })
-                      }
-                      disabled={item.status !== "pending"}
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        if (confirm("Are you sure you want to delete this content?")) {
-                          deleteMutation.mutate(item.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
