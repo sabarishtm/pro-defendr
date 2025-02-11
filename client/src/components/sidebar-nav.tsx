@@ -20,7 +20,7 @@ const navigation = [
   { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
   { name: "Moderation Queue", href: "queue", icon: InboxIcon },
   { name: "Reports", href: "reports", icon: BarChart2 },
-  { name: "Team", href: "team", icon: Users },
+  { name: "Team", href: "users", icon: Users },
   { name: "Settings", href: "settings", icon: Settings },
 ];
 
@@ -143,9 +143,13 @@ export default function SidebarNav() {
                     : "opacity-0 -translate-x-4",
                 )}
               >
-                <span className="text-sm font-medium truncate">
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-sm font-medium truncate hover:no-underline"
+                  onClick={() => navigate("/settings")}
+                >
                   {user.name}
-                </span>
+                </Button>
                 <span className="text-xs text-muted-foreground capitalize">
                   {user.role?.replace("_", " ")}
                 </span>
