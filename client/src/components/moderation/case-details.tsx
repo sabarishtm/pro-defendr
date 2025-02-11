@@ -83,7 +83,7 @@ export function CaseDetails({
 
   // Function to render content based on type
   const renderContent = () => {
-    const contentType = contentItem?.type?.toLowerCase() || "unknown";
+    const contentType = contentItem?.type?.toLowerCase() || "text";
 
     switch (contentType) {
       case "text":
@@ -156,7 +156,7 @@ export function CaseDetails({
         return (
           <div className="p-4 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
-              Unknown content type: {contentItem?.type || "undefined"}
+              Unsupported content type: {contentItem?.type}
             </p>
           </div>
         );
