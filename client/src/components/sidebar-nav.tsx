@@ -118,14 +118,22 @@ export default function SidebarNav() {
           <div className="p-4">
             {/* Sutherland Logo */}
             <div className="flex justify-center mb-4">
-              <div className="relative w-full flex items-center justify-center">
+              <div className="relative w-full h-8 flex items-center justify-center">
                 <img
-                  src={isExpanded ? "/logo.png" : "/logo-small.png"}
+                  src="/logo.png"
                   alt="Sutherland Logo"
-                  className="w-full object-contain transition-all duration-300 ease-in-out"
-                  style={{
-                    maxWidth: isExpanded ? '100%' : '32px'
-                  }}
+                  className={cn(
+                    "absolute w-full h-auto object-contain transition-opacity duration-300 ease-in-out",
+                    isExpanded ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <img
+                  src="/logo-small.png"
+                  alt="Sutherland Logo"
+                  className={cn(
+                    "absolute w-8 h-8 object-contain transition-opacity duration-300 ease-in-out",
+                    isExpanded ? "opacity-0" : "opacity-100"
+                  )}
                 />
               </div>
             </div>
