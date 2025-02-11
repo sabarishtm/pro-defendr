@@ -13,26 +13,20 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
   const queryClient = useQueryClient();
 
   const contentId = parseInt(params.id);
-  console.log("ModeratePage - Content ID:", contentId);
 
   const { data: content, isLoading: isLoadingContent, error: contentError } = useQuery<ContentItem>({
     queryKey: ["/api/content", contentId],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/content/${contentId}`);
-      console.log("API Response for content:", response);
       return response;
     },
     enabled: !isNaN(contentId),
   });
 
-  console.log("ModeratePage - Fetched content:", content);
-
   const { data: case_ } = useQuery<ModerationCase>({
     queryKey: ["/api/cases", contentId],
     enabled: !isNaN(contentId),
   });
-
-  console.log("ModeratePage - Fetched case:", case_);
 
   const assignMutation = useMutation({
     mutationFn: async () => {
@@ -70,7 +64,7 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
 
   if (!content || contentError) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -82,7 +76,7 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8">
       <CaseDetails
         contentItem={content}
         moderationCase={case_}
