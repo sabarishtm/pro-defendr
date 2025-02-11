@@ -1,10 +1,14 @@
 import { Express, Request, Response } from "express";
+import express from "express";  // Add express import
 import { createServer } from "http";
 import { storage } from "./storage";
 import { loginSchema, insertCaseSchema } from "@shared/schema";
 import { analyzeContent } from "./services/ai";
 import session from "express-session";
 import MemoryStore from "memorystore";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 // Extend session type to include userId
 declare module "express-session" {
@@ -14,6 +18,24 @@ declare module "express-session" {
 }
 
 const SessionStore = MemoryStore(session);
+
+// Setup multer for file uploads
+const storageMulter = multer.diskStorage({
+  destination: function (_req: Express.Request, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) {
+    const uploadDir = path.join(process.cwd(), "uploads");
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (_req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + "-" + file.originalname);
+  }
+});
+
+const upload = multer({ storage: storageMulter });
 
 export function registerRoutes(app: Express) {
   // Session setup
@@ -208,6 +230,53 @@ export function registerRoutes(app: Express) {
     const userCases = cases.filter((c) => c.agentId === userId);
     res.json(userCases);
   });
+
+  // File upload route
+  app.post("/api/content/upload", upload.single("file"), async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const fileUrl = `/uploads/${req.file.filename}`;
+      const fileType = req.body.type || "image"; // Default to image if not specified
+
+      const newContent = await storage.createContentItem({
+        content: fileUrl,
+        type: fileType,
+        priority: 1,
+        metadata: {
+          originalMetadata: {
+            filename: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size
+          }
+        }
+      });
+
+      // Run AI analysis on the new content
+      const analysis = await analyzeContent(fileUrl, fileType);
+
+      // Update the content with AI analysis
+      const updatedContent = await storage.updateContentItem(newContent.id, {
+        metadata: {
+          ...newContent.metadata,
+          aiAnalysis: analysis,
+        },
+      });
+
+      res.json(updatedContent);
+    } catch (error) {
+      console.error("Error processing upload:", error);
+      res.status(500).json({ message: "Error processing upload" });
+    }
+  });
+
+  // Serve uploaded files
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
   const httpServer = createServer(app);
   return httpServer;

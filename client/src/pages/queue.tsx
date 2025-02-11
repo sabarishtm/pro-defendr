@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ContentQueue from "@/components/content-queue";
+import { UploadForm } from "@/components/upload-form";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import type { ContentItem } from "@shared/schema";
 
 export default function Queue() {
@@ -76,33 +83,44 @@ export default function Queue() {
       </div>
 
       {showUploadForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Test Content</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                uploadMutation.mutate(newContent);
-              }}
-              className="space-y-4"
-            >
-              <Textarea
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                placeholder="Enter content to test AI moderation..."
-                className="min-h-[100px]"
-              />
-              <Button 
-                type="submit" 
-                disabled={uploadMutation.isPending || !newContent.trim()}
-              >
-                {uploadMutation.isPending ? "Uploading..." : "Upload Content"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="text">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="text">Text Content</TabsTrigger>
+            <TabsTrigger value="media">Media Upload</TabsTrigger>
+          </TabsList>
+          <TabsContent value="text">
+            <Card>
+              <CardHeader>
+                <CardTitle>Add Text Content</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    uploadMutation.mutate(newContent);
+                  }}
+                  className="space-y-4"
+                >
+                  <Textarea
+                    value={newContent}
+                    onChange={(e) => setNewContent(e.target.value)}
+                    placeholder="Enter content to test AI moderation..."
+                    className="min-h-[100px]"
+                  />
+                  <Button 
+                    type="submit" 
+                    disabled={uploadMutation.isPending || !newContent.trim()}
+                  >
+                    {uploadMutation.isPending ? "Uploading..." : "Upload Content"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="media">
+            <UploadForm />
+          </TabsContent>
+        </Tabs>
       )}
 
       <ContentQueue onOpenModeration={handleOpenModeration} />
