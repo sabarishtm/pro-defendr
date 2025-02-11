@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Eye } from "lucide-react";
 import type { ContentItem } from "@shared/schema";
 
-export const columns: ColumnDef<ContentItem>[] = [
+interface TableMeta {
+  onOpenModeration?: (item: ContentItem) => void;
+}
+
+export const columns: ColumnDef<ContentItem, unknown>[] = [
   {
     accessorKey: "content",
     header: ({ column }) => {
@@ -79,12 +83,13 @@ export const columns: ColumnDef<ContentItem>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const item = row.original;
+      const meta = table.options.meta as TableMeta;
       return (
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="icon"
-            onClick={() => table.options.meta?.onOpenModeration?.(item)}
+            onClick={() => meta.onOpenModeration?.(item)}
           >
             <Eye className="h-4 w-4" />
           </Button>

@@ -55,10 +55,8 @@ export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
       <CardContent>
         <DataTable 
           columns={columns} 
-          data={items}
-          meta={{
-            onOpenModeration
-          }}
+          data={items} 
+          onOpenModeration={onOpenModeration}
         />
       </CardContent>
     </Card>
