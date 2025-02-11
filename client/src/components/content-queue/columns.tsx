@@ -16,6 +16,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="whitespace-nowrap"
         >
           Content
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -30,8 +31,6 @@ export const columns: ColumnDef<ContentItem>[] = [
         </div>
       );
     },
-    enableSorting: true,
-    enableGlobalFilter: true,
   },
   {
     accessorKey: "type",
@@ -40,6 +39,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="whitespace-nowrap"
         >
           Type
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -50,8 +50,6 @@ export const columns: ColumnDef<ContentItem>[] = [
       const type = row.getValue("type") as string;
       return <Badge variant="outline">{type}</Badge>;
     },
-    enableSorting: true,
-    enableGlobalFilter: true,
   },
   {
     accessorKey: "priority",
@@ -60,6 +58,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="whitespace-nowrap"
         >
           Priority
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -74,7 +73,6 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
-    enableSorting: true,
   },
   {
     accessorKey: "status",
@@ -83,6 +81,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="whitespace-nowrap"
         >
           Status
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -103,8 +102,6 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
-    enableSorting: true,
-    enableGlobalFilter: true,
   },
   {
     id: "actions",
