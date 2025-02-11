@@ -124,10 +124,10 @@ export default function SidebarNav() {
                   isExpanded ? "rotate-0" : "-rotate-90"
                 )}
               >
-                <img 
-                  src="/logo.png" 
-                  alt="Sutherland Logo" 
-                  className="h-48 w-48 object-contain"
+                <img
+                  src="/logo.png"
+                  alt="Sutherland Logo"
+                  className="h-32 object-contain lg:h-48"
                 />
               </div>
             </div>
