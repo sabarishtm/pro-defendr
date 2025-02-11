@@ -97,11 +97,11 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     switch (item.type.toLowerCase()) {
       case 'image':
         return (
-          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted group-hover:scale-110 transition-all duration-200">
+          <div className="relative w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted group-hover:scale-110 transition-all duration-200">
             <img
               src={item.content}
               alt="Thumbnail"
-              className="w-full h-full object-cover blur-sm group-hover:blur-0 transition-all duration-200"
+              className="w-full h-full object-contain blur-sm group-hover:blur-0 transition-all duration-500"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -114,13 +114,13 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         );
       case 'video':
         return (
-          <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
+          <div className="w-[120px] h-[80px] rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
             <Video className="w-8 h-8 text-muted-foreground" />
           </div>
         );
       default:
         return (
-          <div className="w-16 h-16 rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
+          <div className="w-[120px] h-[80px] rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
             <FileText className="w-8 h-8 text-muted-foreground" />
           </div>
         );
@@ -203,7 +203,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Preview</TableHead>
+                <TableHead className="w-[140px]">Preview</TableHead>
                 <SortableHeader field="name">Content</SortableHeader>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
