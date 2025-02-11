@@ -140,6 +140,7 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   notes: true,
   decision: true,
 });
+
 export const insertTeamSchema = createInsertSchema(teams).pick({
   name: true,
   description: true,
@@ -155,7 +156,6 @@ export const decisionSchema = z.object({
 
 export type Decision = z.infer<typeof decisionSchema>;
 
-
 // Export additional types
 export type UserPermission = typeof Permission[keyof typeof Permission];
 export type UserRoleType = typeof UserRole[keyof typeof UserRole];
@@ -170,7 +170,7 @@ export type ContentItem = typeof contentItems.$inferSelect;
 export type InsertContentItem = z.infer<typeof insertContentSchema>;
 export type Case = typeof cases.$inferSelect;
 export type InsertCase = z.infer<typeof insertCaseSchema>;
-export type ModerationCase = Case; // Add this export for the ModerationCase type
+export type ModerationCase = Case;
 
 // Login Types
 export const loginSchema = z.object({
