@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 interface ContentQueueProps {
   onOpenModeration?: (item: ContentItem) => void;
@@ -19,6 +21,8 @@ interface ContentQueueProps {
 
 export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
   const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
+
   const { data: items = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content"],
     queryFn: async () => {
@@ -46,6 +50,13 @@ export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
     }
   });
 
+  // Filter items based on search query
+  const filteredItems = items.filter((item) => 
+    item.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.status.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <Card>
@@ -63,15 +74,25 @@ export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Content Queue</CardTitle>
-        <CardDescription>
-          Review and moderate content items in the queue ({items.length} items)
-        </CardDescription>
+        <div className="flex flex-col space-y-4">
+          <div>
+            <CardTitle>Content Queue</CardTitle>
+            <CardDescription>
+              Review and moderate content items in the queue ({items.length} items)
+            </CardDescription>
+          </div>
+          <Input
+            placeholder="Search content, type, or status..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <DataTable 
           columns={columns} 
-          data={items} 
+          data={filteredItems} 
           onOpenModeration={onOpenModeration}
         />
       </CardContent>

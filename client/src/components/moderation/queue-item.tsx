@@ -31,11 +31,11 @@ export function QueueItem({ item, onAssign }: QueueItemProps) {
               className="w-full h-40 object-cover rounded-md"
             />
           )}
-          
+
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">
-                Source: {item.metadata.source}
+                Source: {item.metadata.originalMetadata?.source || 'Unknown'}
               </p>
             </div>
             {item.priority > 2 && (
