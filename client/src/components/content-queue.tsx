@@ -116,25 +116,25 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   // Filter items based on all criteria
   const filteredItems = items.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.content.toLowerCase().includes(search.toLowerCase()) ||
       item.type.toLowerCase().includes(search.toLowerCase()) ||
       item.status.toLowerCase().includes(search.toLowerCase());
 
     const matchesType = filters.type === "all" || item.type === filters.type;
     const matchesStatus = filters.status === "all" || item.status === filters.status;
-    const matchesPriority = filters.priority === "all" || 
+    const matchesPriority = filters.priority === "all" ||
       (filters.priority === "high" ? item.priority > 1 : filters.priority === "low" && item.priority === 1);
-    const matchesAssignee = filters.assignedTo === "all" || 
-      (filters.assignedTo === "unassigned" ? !item.assignedTo : 
-       item.assignedUserName?.toLowerCase() === filters.assignedTo.toLowerCase());
+    const matchesAssignee = filters.assignedTo === "all" ||
+      (filters.assignedTo === "unassigned" ? !item.assignedTo :
+        item.assignedUserName?.toLowerCase() === filters.assignedTo.toLowerCase());
 
     const itemDate = new Date(item.createdAt);
-    const matchesDateRange = 
+    const matchesDateRange =
       (!filters.dateFrom || itemDate >= filters.dateFrom) &&
       (!filters.dateTo || itemDate <= filters.dateTo);
 
-    return matchesSearch && matchesType && matchesStatus && 
+    return matchesSearch && matchesType && matchesStatus &&
            matchesPriority && matchesAssignee && matchesDateRange;
   });
 
@@ -239,165 +239,160 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               Review and moderate content items ({totalItems} items)
             </CardDescription>
           </div>
-          <div className="flex flex-col space-y-4">
-            {/* Search and filters */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 flex-1">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search content..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search content..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="w-[200px]"
+              />
+            </div>
+            <Select
+              value={filters.type}
+              onValueChange={(value) => {
+                setFilters(prev => ({ ...prev, type: value }));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Content Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {uniqueTypes.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.status}
+              onValueChange={(value) => {
+                setFilters(prev => ({ ...prev, status: value }));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {uniqueStatuses.map(status => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.priority}
+              onValueChange={(value) => {
+                setFilters(prev => ({ ...prev, priority: value }));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={filters.assignedTo}
+              onValueChange={(value) => {
+                setFilters(prev => ({ ...prev, assignedTo: value }));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Assigned To" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Assignees</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {uniqueAssignees.map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[130px]">
+                  {filters.dateFrom ? format(filters.dateFrom, "PP") : "From Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={filters.dateFrom}
+                  onSelect={(date) => {
+                    setFilters(prev => ({ ...prev, dateFrom: date }));
                     setPage(1);
                   }}
-                  className="w-[300px]"
+                  initialFocus
                 />
-              </div>
-              <Select
-                value={filters.type}
-                onValueChange={(value) => {
-                  setFilters(prev => ({ ...prev, type: value }));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Content Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {uniqueTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={filters.status}
-                onValueChange={(value) => {
-                  setFilters(prev => ({ ...prev, status: value }));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {uniqueStatuses.map(status => (
-                    <SelectItem key={status} value={status}>{status}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={filters.priority}
-                onValueChange={(value) => {
-                  setFilters(prev => ({ ...prev, priority: value }));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filters.assignedTo}
-                onValueChange={(value) => {
-                  setFilters(prev => ({ ...prev, assignedTo: value }));
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Assigned To" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Assignees</SelectItem>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {uniqueAssignees.map(name => (
-                    <SelectItem key={name} value={name}>{name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Date range filters */}
-            <div className="flex items-center space-x-4">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[150px]">
-                    {filters.dateFrom ? format(filters.dateFrom, "PP") : "From Date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={filters.dateFrom}
-                    onSelect={(date) => {
-                      setFilters(prev => ({ ...prev, dateFrom: date }));
-                      setPage(1);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[150px]">
-                    {filters.dateTo ? format(filters.dateTo, "PP") : "To Date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={filters.dateTo}
-                    onSelect={(date) => {
-                      setFilters(prev => ({ ...prev, dateTo: date }));
-                      setPage(1);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFilters({
-                    type: "all",
-                    status: "all",
-                    priority: "all",
-                    assignedTo: "all",
-                    dateFrom: null,
-                    dateTo: null,
-                  });
-                  setPage(1);
-                }}
-              >
-                Clear Filters
-              </Button>
-              <div className="flex-1 flex justify-end">
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(value) => {
-                    setPageSize(Number(value));
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[130px]">
+                  {filters.dateTo ? format(filters.dateTo, "PP") : "To Date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={filters.dateTo}
+                  onSelect={(date) => {
+                    setFilters(prev => ({ ...prev, dateTo: date }));
                     setPage(1);
                   }}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select page size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 per page</SelectItem>
-                    <SelectItem value="10">10 per page</SelectItem>
-                    <SelectItem value="20">20 per page</SelectItem>
-                    <SelectItem value="50">50 per page</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFilters({
+                  type: "all",
+                  status: "all",
+                  priority: "all",
+                  assignedTo: "all",
+                  dateFrom: null,
+                  dateTo: null,
+                });
+                setPage(1);
+              }}
+            >
+              Clear
+            </Button>
+            <div className="flex-1" />
+            <Select
+              value={pageSize.toString()}
+              onValueChange={(value) => {
+                setPageSize(Number(value));
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-[130px]">
+                <SelectValue placeholder="Page Size" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 per page</SelectItem>
+                <SelectItem value="10">10 per page</SelectItem>
+                <SelectItem value="20">20 per page</SelectItem>
+                <SelectItem value="50">50 per page</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
         </div>
       </CardHeader>
       <CardContent>
