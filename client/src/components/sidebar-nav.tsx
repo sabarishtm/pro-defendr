@@ -55,56 +55,50 @@ export default function SidebarNav() {
   return (
     <div
       className={cn(
-        "flex flex-col bg-sidebar border-r transition-all duration-300 ease-in-out group",
-        isExpanded ? "w-64" : "w-[60px]"
+        "flex flex-col bg-sidebar border-r transition-[width] duration-300 ease-in-out group",
+        isExpanded ? "w-64" : "w-16"
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
-      <div className={cn(
-        "p-6 transition-all duration-300 flex items-center relative h-[72px]",
-        !isExpanded && "p-3"
-      )}>
+      {/* Logo Area - Fixed height and consistent padding */}
+      <div className="h-16 flex items-center px-4 relative border-b">
         <div className="relative w-full h-full flex items-center">
+          {/* Expanded logo */}
           <div className={cn(
-            "flex items-center gap-2 transition-all duration-300",
-            isExpanded ? "opacity-100" : "opacity-0 scale-75"
+            "flex items-center gap-2 absolute left-0 transition-all duration-300",
+            isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
           )}>
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Defendr</span>
+            <Shield className="h-8 w-8 text-primary flex-shrink-0" />
+            <span className="text-xl font-bold whitespace-nowrap">Defendr</span>
           </div>
+          {/* Collapsed logo */}
           <div className={cn(
-            "absolute left-0 top-1/2 -translate-y-1/2 transition-all duration-300",
-            isExpanded ? "opacity-0" : "opacity-100"
+            "absolute left-0 transition-all duration-300",
+            isExpanded ? "opacity-0 scale-75" : "opacity-100 scale-100"
           )}>
             <Shield className="h-8 w-8 text-primary" />
           </div>
         </div>
-        <ChevronRight className={cn(
-          "h-5 w-5 transition-transform duration-300 ml-auto",
-          isExpanded ? "opacity-0 w-0" : "opacity-100",
-          "text-sidebar-foreground"
-        )} />
       </div>
-      <ScrollArea className="flex-1">
+
+      {/* Navigation Area */}
+      <ScrollArea className="flex-1 py-2">
         <nav className="space-y-1 px-2">
           {navigation.map((item) => (
             <Button
               key={item.name}
               variant="ghost"
               className={cn(
-                "w-full justify-start",
+                "w-full justify-start h-10 transition-all duration-300",
                 !isExpanded && "px-3"
               )}
               onClick={() => navigate(`/${item.href}`)}
             >
-              <item.icon className={cn(
-                "h-5 w-5",
-                isExpanded ? "mr-3" : "mr-0"
-              )} />
+              <item.icon className="h-5 w-5 flex-shrink-0" />
               <span className={cn(
-                "transition-all duration-300",
-                !isExpanded && "opacity-0 w-0 overflow-hidden"
+                "ml-3 transition-all duration-300",
+                !isExpanded && "w-0 opacity-0"
               )}>
                 {item.name}
               </span>
@@ -113,43 +107,40 @@ export default function SidebarNav() {
         </nav>
       </ScrollArea>
 
+      {/* User Profile and Logout Area */}
       {user && (
-        <div className={cn(
-          "p-4 border-t",
-          !isExpanded && "p-2"
-        )}>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium">
-              {getInitials(user.name)}
+        <div className="border-t">
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
+                {getInitials(user.name)}
+              </div>
+              <div className={cn(
+                "flex flex-col transition-all duration-300",
+                !isExpanded && "w-0 opacity-0"
+              )}>
+                <span className="text-sm font-medium truncate">{user.name}</span>
+                <span className="text-xs text-muted-foreground capitalize">{user.role.replace('_', ' ')}</span>
+              </div>
             </div>
-            <div className={cn(
-              "flex flex-col transition-all duration-300 overflow-hidden",
-              !isExpanded && "w-0"
-            )}>
-              <span className="text-sm font-medium truncate">{user.name}</span>
-              <span className="text-xs text-muted-foreground capitalize">{user.role.replace('_', ' ')}</span>
-            </div>
+            <Separator className="my-2" />
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start h-10 transition-all duration-300",
+                !isExpanded && "px-3"
+              )}
+              onClick={() => logoutMutation.mutate()}
+            >
+              <LogOut className="h-5 w-5 flex-shrink-0" />
+              <span className={cn(
+                "ml-3 transition-all duration-300",
+                !isExpanded && "w-0 opacity-0"
+              )}>
+                Logout
+              </span>
+            </Button>
           </div>
-          <Separator className="my-2" />
-          <Button
-            variant="ghost"
-            className={cn(
-              "w-full justify-start",
-              !isExpanded && "px-3"
-            )}
-            onClick={() => logoutMutation.mutate()}
-          >
-            <LogOut className={cn(
-              "h-5 w-5",
-              isExpanded ? "mr-3" : "mr-0"
-            )} />
-            <span className={cn(
-              "transition-all duration-300",
-              !isExpanded && "opacity-0 w-0 overflow-hidden"
-            )}>
-              Logout
-            </span>
-          </Button>
         </div>
       )}
     </div>
