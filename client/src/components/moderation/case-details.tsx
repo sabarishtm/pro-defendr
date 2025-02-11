@@ -21,8 +21,6 @@ export function CaseDetails({
   moderationCase,
   onComplete 
 }: CaseDetailsProps) {
-  console.log("CaseDetails received contentItem:", contentItem);
-
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState(false);
@@ -31,17 +29,13 @@ export function CaseDetails({
   async function handleDecision(decision: "approve" | "reject") {
     try {
       setIsSubmitting(true);
+      console.log("Recording decision:", { contentId: contentItem.id, decision, notes });
 
-      if (moderationCase) {
-        await apiRequest("PATCH", `/api/cases/${moderationCase.id}`, {
-          decision,
-          notes,
-          status: "closed"
-        });
-      }
-
-      await apiRequest("PATCH", `/api/content/${contentItem.id}`, {
-        status: decision === "approve" ? "approved" : "rejected"
+      // First create/update the case with the decision
+      await apiRequest("PATCH", "/api/cases/decision", {
+        contentId: contentItem.id,
+        decision,
+        notes
       });
 
       toast({
@@ -51,27 +45,22 @@ export function CaseDetails({
 
       onComplete();
     } catch (error) {
+      console.error("Decision error:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to record decision. Please try again."
+        description: error instanceof Error ? error.message : "Failed to record decision. Please try again."
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  // Function to render content based on type
   const renderContent = () => {
-    console.log("Rendering content with type:", contentItem.type);
-    console.log("Content value:", contentItem.content);
-
     const type = contentItem.type?.toLowerCase() || 'text';
-    console.log("Normalized type:", type);
 
     switch (type) {
       case "text":
-        console.log("Rendering text content");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -87,7 +76,6 @@ export function CaseDetails({
         );
 
       case "image":
-        console.log("Rendering image content");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -115,7 +103,6 @@ export function CaseDetails({
         );
 
       case "video":
-        console.log("Rendering video content");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -145,7 +132,6 @@ export function CaseDetails({
         );
 
       default:
-        console.log("Rendering unknown content type");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -180,12 +166,10 @@ export function CaseDetails({
           </Alert>
         )}
 
-        {/* Content Display - Now more prominent */}
         <div className="space-y-6">
           {renderContent()}
         </div>
 
-        {/* AI Analysis Section - Now more subtle */}
         {contentItem.metadata?.aiAnalysis && (
           <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border/50">
             <div className="flex items-center gap-2 text-muted-foreground">
@@ -243,7 +227,6 @@ export function CaseDetails({
           </div>
         )}
 
-        {/* Decision Controls */}
         <div className="space-y-4 pt-4 border-t">
           <Textarea
             value={notes}
