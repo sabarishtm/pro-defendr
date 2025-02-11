@@ -11,16 +11,7 @@ interface TableMeta {
 export const columns: ColumnDef<ContentItem>[] = [
   {
     accessorKey: "content",
-    header: ({ column }) => {
-      return (
-        <div className="flex items-center">
-          Content
-          {column.getCanSort() && (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </div>
-      );
-    },
+    header: "Content",
     cell: ({ row }) => {
       const content = row.getValue("content") as string;
       return (
@@ -32,16 +23,7 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     accessorKey: "type",
-    header: ({ column }) => {
-      return (
-        <div className="flex items-center">
-          Type
-          {column.getCanSort() && (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </div>
-      );
-    },
+    header: "Type",
     cell: ({ row }) => {
       const type = row.getValue("type") as string;
       return <Badge variant="outline">{type}</Badge>;
@@ -49,16 +31,7 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     accessorKey: "priority",
-    header: ({ column }) => {
-      return (
-        <div className="flex items-center">
-          Priority
-          {column.getCanSort() && (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </div>
-      );
-    },
+    header: "Priority",
     cell: ({ row }) => {
       const priority = row.getValue("priority") as number;
       return (
@@ -70,16 +43,7 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     accessorKey: "status",
-    header: ({ column }) => {
-      return (
-        <div className="flex items-center">
-          Status
-          {column.getCanSort() && (
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          )}
-        </div>
-      );
-    },
+    header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (

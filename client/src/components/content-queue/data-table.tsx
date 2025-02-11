@@ -50,6 +50,7 @@ export function DataTable<TData>({
   const table = useReactTable({
     data,
     columns,
+    enableSorting: true,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -126,8 +127,6 @@ export function DataTable<TData>({
                     <TableHead
                       key={header.id}
                       className="whitespace-nowrap"
-                      onClick={header.column.getToggleSortingHandler()}
-                      style={{ cursor: "pointer" }}
                     >
                       {header.isPlaceholder
                         ? null
