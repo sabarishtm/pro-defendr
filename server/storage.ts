@@ -20,6 +20,7 @@ export interface IStorage {
   createContentItem(item: InsertContentItem): Promise<ContentItem>;
   updateContentItem(id: number, updates: Partial<ContentItem>): Promise<ContentItem>;
   getNextContentItem(): Promise<ContentItem | undefined>;
+  deleteContentItem(id: number): Promise<void>;
 
   // Case operations
   getCases(): Promise<Case[]>;
@@ -96,6 +97,10 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
 
     return nextItem;
+  }
+
+  async deleteContentItem(id: number): Promise<void> {
+    await db.delete(contentItems).where(eq(contentItems.id, id));
   }
 
   async getCases(): Promise<Case[]> {

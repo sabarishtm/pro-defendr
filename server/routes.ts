@@ -284,6 +284,46 @@ export function registerRoutes(app: Express) {
   // Serve uploaded files
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+  // Add delete route before the server export
+  app.delete("/api/content/:id", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const contentId = parseInt(req.params.id);
+      if (isNaN(contentId)) {
+        return res.status(400).json({ message: "Invalid content ID" });
+      }
+
+      const item = await storage.getContentItem(contentId);
+      if (!item) {
+        return res.status(404).json({ message: "Content not found" });
+      }
+
+      // Don't allow deletion of content that's being moderated
+      if (item.assignedTo) {
+        return res.status(400).json({ message: "Content is currently being moderated" });
+      }
+
+      // If it's a media file, delete it from the uploads directory
+      if ((item.type === 'image' || item.type === 'video') && item.content.startsWith('/uploads/')) {
+        const filePath = path.join(process.cwd(), item.content);
+        try {
+          await fs.promises.unlink(filePath);
+        } catch (error) {
+          console.error("Error deleting file:", error);
+          // Continue with content deletion even if file deletion fails
+        }
+      }
+
+      await storage.deleteContentItem(contentId);
+      res.json({ message: "Content deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting content:", error);
+      res.status(500).json({ message: "Error deleting content" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
