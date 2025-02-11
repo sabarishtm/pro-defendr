@@ -150,7 +150,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getContentItemsWithAssignedUsers(): Promise<(ContentItem & { assignedUserName?: string })[]> {
-    const items = await db.select().from(contentItems).orderBy(contentItems.priority);
+    const items = await db
+      .select()
+      .from(contentItems)
+      .orderBy((cols) => [cols.createdAt])
+      .prepare();
+
     const itemsWithUsers = await Promise.all(
       items.map(async (item) => {
         if (item.assignedTo) {
