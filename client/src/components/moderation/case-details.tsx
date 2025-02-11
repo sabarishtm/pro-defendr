@@ -21,6 +21,8 @@ export function CaseDetails({
   moderationCase,
   onComplete 
 }: CaseDetailsProps) {
+  console.log("CaseDetails received contentItem:", contentItem);
+
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState(false);
@@ -61,10 +63,15 @@ export function CaseDetails({
 
   // Function to render content based on type
   const renderContent = () => {
+    console.log("Rendering content with type:", contentItem.type);
+    console.log("Content value:", contentItem.content);
+
     const type = contentItem.type?.toLowerCase() || 'text';
+    console.log("Normalized type:", type);
 
     switch (type) {
       case "text":
+        console.log("Rendering text content");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -80,6 +87,7 @@ export function CaseDetails({
         );
 
       case "image":
+        console.log("Rendering image content");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -105,6 +113,7 @@ export function CaseDetails({
         );
 
       case "video":
+        console.log("Rendering video content");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -132,6 +141,7 @@ export function CaseDetails({
         );
 
       default:
+        console.log("Rendering unknown content type");
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
