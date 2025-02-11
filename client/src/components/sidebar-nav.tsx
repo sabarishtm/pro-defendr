@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -10,7 +11,9 @@ import {
   Users,
   Settings,
   LogOut,
+  ChevronRight,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "dashboard", icon: LayoutDashboard },
@@ -22,6 +25,7 @@ const navigation = [
 
 export default function SidebarNav() {
   const [, navigate] = useLocation();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -33,35 +37,80 @@ export default function SidebarNav() {
   });
 
   return (
-    <div className="flex flex-col w-64 bg-sidebar border-r">
-      <div className="p-6">
-        <h1 className="text-xl font-semibold text-sidebar-foreground">
-          Content Mod
-        </h1>
+    <div
+      className={cn(
+        "flex flex-col bg-sidebar border-r transition-all duration-300 ease-in-out group",
+        isExpanded ? "w-64" : "w-[60px]"
+      )}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
+      <div className={cn(
+        "p-6 transition-all duration-300 flex items-center",
+        !isExpanded && "p-3"
+      )}>
+        <img 
+          src="/attached_assets/Sutherland_R_Logo_Horiz_RGB.png"
+          alt="Sutherland Logo"
+          className={cn(
+            "transition-all duration-300",
+            isExpanded ? "w-32" : "w-8"
+          )}
+        />
+        <ChevronRight className={cn(
+          "h-5 w-5 transition-transform duration-300 ml-auto",
+          isExpanded ? "opacity-0 w-0" : "opacity-100",
+          "text-sidebar-foreground"
+        )} />
       </div>
       <ScrollArea className="flex-1">
-        <nav className="space-y-1 px-4">
+        <nav className="space-y-1 px-2">
           {navigation.map((item) => (
             <Button
               key={item.name}
               variant="ghost"
-              className="w-full justify-start"
+              className={cn(
+                "w-full justify-start",
+                !isExpanded && "px-3"
+              )}
               onClick={() => navigate(`/${item.href}`)}
             >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.name}
+              <item.icon className={cn(
+                "h-5 w-5",
+                isExpanded ? "mr-3" : "mr-0"
+              )} />
+              <span className={cn(
+                "transition-all duration-300",
+                !isExpanded && "opacity-0 w-0 overflow-hidden"
+              )}>
+                {item.name}
+              </span>
             </Button>
           ))}
         </nav>
       </ScrollArea>
-      <div className="p-4 border-t">
+      <div className={cn(
+        "p-4 border-t",
+        !isExpanded && "p-2"
+      )}>
         <Button
           variant="ghost"
-          className="w-full justify-start"
+          className={cn(
+            "w-full justify-start",
+            !isExpanded && "px-3"
+          )}
           onClick={() => logoutMutation.mutate()}
         >
-          <LogOut className="mr-3 h-5 w-5" />
-          Logout
+          <LogOut className={cn(
+            "h-5 w-5",
+            isExpanded ? "mr-3" : "mr-0"
+          )} />
+          <span className={cn(
+            "transition-all duration-300",
+            !isExpanded && "opacity-0 w-0 overflow-hidden"
+          )}>
+            Logout
+          </span>
         </Button>
       </div>
     </div>
