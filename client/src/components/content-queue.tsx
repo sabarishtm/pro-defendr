@@ -66,6 +66,9 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   const { data: items = [], isLoading } = useQuery<ContentItemWithUser[]>({
     queryKey: ["/api/content"],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 0
   });
 
   const deleteMutation = useMutation({
