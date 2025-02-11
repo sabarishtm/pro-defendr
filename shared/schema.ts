@@ -19,6 +19,7 @@ export const aiAnalysisSchema = z.object({
 
 export type AIAnalysis = z.infer<typeof aiAnalysisSchema>;
 
+// User Types
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -28,6 +29,7 @@ export const users = pgTable("users", {
   status: text("status").notNull().default("offline"),
 });
 
+// Content Types
 export const contentItems = pgTable("content_items", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
@@ -41,6 +43,7 @@ export const contentItems = pgTable("content_items", {
   }>(),
 });
 
+// Moderation Case Types
 export const cases = pgTable("cases", {
   id: serial("id").primaryKey(),
   contentId: integer("content_id").references(() => contentItems.id).notNull(),
@@ -48,8 +51,10 @@ export const cases = pgTable("cases", {
   status: text("status").notNull().default("open"),
   notes: text("notes"),
   decision: text("decision"), // approved, rejected
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Schema Types
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -78,13 +83,16 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   decision: true,
 });
 
+// Export Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type ContentItem = typeof contentItems.$inferSelect;
 export type InsertContentItem = z.infer<typeof insertContentSchema>;
 export type Case = typeof cases.$inferSelect;
 export type InsertCase = z.infer<typeof insertCaseSchema>;
+export type ModerationCase = Case; // Add this export for the ModerationCase type
 
+// Login Types
 export const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(6),
