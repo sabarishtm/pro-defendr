@@ -10,6 +10,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { checkPermission, PermissionError } from "./utils/permissions";
+import { moderationService } from "./services/moderation";
 
 // Extend session type to include userId
 declare module "express-session" {
@@ -163,6 +164,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Update the content analysis in the /api/content/next route
   app.get("/api/content/next", async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -175,7 +177,24 @@ export function registerRoutes(app: Express) {
 
       // Only analyze if no AI analysis exists
       if (!nextItem.metadata.aiAnalysis) {
-        const analysis = await analyzeContent(nextItem.content, nextItem.type);
+        const moderationResult = await moderationService.moderateContent(nextItem);
+        const analysis = {
+          classification: {
+            category: nextItem.type,
+            confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
+            suggestedAction: moderationResult.status === "approved" ? "approve" :
+                             moderationResult.status === "rejected" ? "reject" : "review",
+          },
+          contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
+            type,
+            severity: severity * 10, // Convert to 0-10 scale
+            details: `Content contains ${type} with confidence ${severity}`,
+          })),
+          riskScore: Math.max(...Object.values(moderationResult.aiConfidence), 0),
+          regions: moderationResult.regions,
+          timeline: moderationResult.output,
+        };
+
         await storage.updateContentItem(nextItem.id, {
           metadata: {
             ...nextItem.metadata,
@@ -362,7 +381,7 @@ export function registerRoutes(app: Express) {
     res.json(userCases);
   });
 
-  // File upload route
+  // Update file upload route to use moderation service
   app.post("/api/content/upload", upload.single("file"), async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -394,10 +413,26 @@ export function registerRoutes(app: Express) {
         }
       });
 
-      // Run AI analysis on the new content
-      const analysis = await analyzeContent(fileUrl, fileType);
+      // Run moderation analysis on the new content
+      const moderationResult = await moderationService.moderateContent(newContent);
+      const analysis = {
+        classification: {
+          category: fileType,
+          confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
+          suggestedAction: moderationResult.status === "approved" ? "approve" :
+                           moderationResult.status === "rejected" ? "reject" : "review",
+        },
+        contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
+          type,
+          severity: severity * 10, // Convert to 0-10 scale
+          details: `Content contains ${type} with confidence ${severity}`,
+        })),
+        riskScore: Math.max(...Object.values(moderationResult.aiConfidence), 0),
+        regions: moderationResult.regions,
+        timeline: moderationResult.output,
+      };
 
-      // Update the content with AI analysis
+      // Update the content with moderation analysis
       const updatedContent = await storage.updateContentItem(newContent.id, {
         metadata: {
           ...newContent.metadata,

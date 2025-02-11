@@ -2,6 +2,26 @@ import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Content Region Types for Moderation
+export const contentRegionSchema = z.object({
+  type: z.string(),
+  confidence: z.number(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+
+export type ContentRegion = z.infer<typeof contentRegionSchema>;
+
+// Video Timeline Types
+export const videoOutputSchema = z.object({
+  time: z.number(),
+  confidence: z.record(z.number()),
+});
+
+export type VideoOutput = z.infer<typeof videoOutputSchema>;
+
 // AI Analysis Types
 export const aiAnalysisSchema = z.object({
   classification: z.object({
@@ -15,6 +35,8 @@ export const aiAnalysisSchema = z.object({
     details: z.string(),
   })),
   riskScore: z.number(),
+  regions: z.array(contentRegionSchema).optional(),
+  timeline: z.array(videoOutputSchema).optional(),
 });
 
 export type AIAnalysis = z.infer<typeof aiAnalysisSchema>;
