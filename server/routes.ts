@@ -316,7 +316,7 @@ export function registerRoutes(app: Express) {
       if (existingCase) {
         updatedCase = await storage.updateCase(existingCase.id, {
           decision: data.decision,
-          status: "closed",
+          status: "closed", // Ensure status is set to closed
           notes: data.notes
         });
       } else {
@@ -325,14 +325,16 @@ export function registerRoutes(app: Express) {
           contentId: data.contentId,
           agentId: userId,
           decision: data.decision,
-          notes: data.notes || null
+          notes: data.notes || null,
+          status: "closed" // Set status to closed for new cases with decisions
         });
       }
       console.log("Updated/Created case:", updatedCase);
 
-      // Update content item status
+      // Update content item status to match the decision
+      const contentStatus = data.decision === "approve" ? "approved" : "rejected";
       await storage.updateContentItem(data.contentId, {
-        status: data.decision === "approve" ? "approved" : "rejected",
+        status: contentStatus,
         assignedTo: null, // Release assignment after decision
       });
 
@@ -429,7 +431,7 @@ export function registerRoutes(app: Express) {
       // Check for existing cases
       const cases = await storage.getCases();
       const contentCases = cases.filter(c => c.contentId === contentId);
-      const pendingCasesFromOthers = contentCases.filter(c => 
+      const pendingCasesFromOthers = contentCases.filter(c =>
         c.decision === null && c.agentId !== userId
       );
 
