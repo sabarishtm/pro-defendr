@@ -93,7 +93,9 @@ export function CaseDetails({
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium">Text Content</span>
             </div>
-            <p className="whitespace-pre-wrap">{contentItem.content}</p>
+            <div className="mt-4">
+              <p className="whitespace-pre-wrap text-base">{contentItem.content}</p>
+            </div>
           </div>
         );
 
