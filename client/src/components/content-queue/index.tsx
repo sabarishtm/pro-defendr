@@ -1,7 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { DataTable } from "./data-table";
-import { columns } from "./columns";
 import type { ContentItem } from "@shared/schema";
 import {
   Card,
@@ -72,11 +71,8 @@ export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <DataTable 
-          columns={columns} 
-          data={items} 
-          onOpenModeration={onOpenModeration}
-        />
+        {/* We'll implement the table here */}
+        <pre>{JSON.stringify(items, null, 2)}</pre>
       </CardContent>
     </Card>
   );
