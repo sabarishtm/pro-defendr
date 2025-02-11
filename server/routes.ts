@@ -207,63 +207,118 @@ export function registerRoutes(app: Express) {
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
+      console.log("Received case creation request:", { ...req.body, userId });
       const data = insertCaseSchema.parse({ ...req.body, agentId: userId });
-      const newCase = await storage.createCase(data);
-      console.log("Created new case:", newCase);
 
-      // Update content item status
-      await storage.updateContentItem(data.contentId, {
-        status: data.decision || "pending",
-        assignedTo: userId,
-      });
+      // Check if a case already exists for this content and user
+      const cases = await storage.getCases();
+      console.log("Existing cases:", cases);
 
-      res.json(newCase);
+      const existingCase = cases.find(c =>
+        c.contentId === data.contentId &&
+        c.agentId === userId &&
+        !c.decision // Only consider undecided cases
+      );
+      console.log("Found existing case:", existingCase);
+
+      let caseToUpdate;
+      if (existingCase) {
+        caseToUpdate = existingCase;
+      } else {
+        // Create new case if none exists
+        caseToUpdate = await storage.createCase(data);
+        console.log("Created new case:", caseToUpdate);
+      }
+
+      // If decision is provided, update it immediately
+      if (data.decision) {
+        caseToUpdate = await storage.updateCase(caseToUpdate.id, {
+          decision: data.decision,
+          status: "closed",
+          notes: data.notes
+        });
+        console.log("Updated case with decision:", caseToUpdate);
+
+        // Update content item status
+        await storage.updateContentItem(data.contentId, {
+          status: data.decision,
+          assignedTo: null, // Release assignment after decision
+        });
+      } else {
+        // If no decision, just assign the content
+        await storage.updateContentItem(data.contentId, {
+          assignedTo: userId,
+        });
+      }
+
+      console.log("Case operation completed:", caseToUpdate);
+      res.json(caseToUpdate);
     } catch (error) {
-      console.error("Error creating case:", error);
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error handling case:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(400).json({ 
+        message: "Invalid request", 
+        details: errorMessage 
+      });
     }
   });
 
-  // Add a new endpoint to update case decisions
   app.patch("/api/cases/:id/decision", async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-      const caseId = parseInt(req.params.id);
-      if (isNaN(caseId)) {
-        return res.status(400).json({ message: "Invalid case ID" });
+      const { contentId, decision, notes } = req.body;
+      console.log("Received decision request:", { contentId, decision, notes, userId });
+
+      if (!contentId || !decision || !["approved", "rejected"].includes(decision)) {
+        return res.status(400).json({ message: "Invalid request data" });
       }
 
-      const { decision } = req.body;
-      if (!decision || !["approved", "rejected"].includes(decision)) {
-        return res.status(400).json({ message: "Invalid decision" });
-      }
+      // Find or create case
+      const cases = await storage.getCases();
+      console.log("Found cases:", cases);
 
-      const case_ = await storage.getCase(caseId);
-      if (!case_) {
-        return res.status(404).json({ message: "Case not found" });
-      }
+      const existingCase = cases.find(c =>
+        c.contentId === contentId &&
+        c.agentId === userId &&
+        !c.decision // Only consider undecided cases
+      );
+      console.log("Existing case:", existingCase);
 
-      if (case_.agentId !== userId) {
-        return res.status(403).json({ message: "Not authorized to update this case" });
+      let updatedCase;
+      if (existingCase) {
+        updatedCase = await storage.updateCase(existingCase.id, {
+          decision,
+          status: "closed",
+          notes
+        });
+      } else {
+        // Create new case with decision
+        updatedCase = await storage.createCase({
+          contentId,
+          agentId: userId,
+          decision,
+          notes
+        });
       }
-
-      const updatedCase = await storage.updateCase(caseId, { 
-        decision,
-        status: "closed" 
-      });
+      console.log("Updated/Created case:", updatedCase);
 
       // Update content item status
-      await storage.updateContentItem(case_.contentId, {
+      await storage.updateContentItem(contentId, {
         status: decision,
-        assignedTo: null, // Assuming the case is closed after decision
+        assignedTo: null, // Release assignment after decision
       });
 
+      console.log("Updated case with decision:", updatedCase);
       res.json(updatedCase);
     } catch (error) {
       console.error("Error updating case decision:", error);
-      res.status(500).json({ message: "Error updating case decision" });
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({ 
+        message: "Error updating case decision",
+        details: errorMessage
+      });
     }
   });
 
@@ -360,7 +415,7 @@ export function registerRoutes(app: Express) {
       // If content is being actively moderated, include moderator information
       if (item.status === "pending" && item.assignedTo) {
         const moderator = await storage.getUser(item.assignedTo);
-        errorMessage = moderator 
+        errorMessage = moderator
           ? `Content is currently being moderated by ${moderator.name}`
           : "Content is currently being moderated";
       }
