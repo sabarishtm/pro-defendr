@@ -133,7 +133,7 @@ export default function SidebarNav() {
             {/* User Info */}
             <Button
               variant="ghost"
-              className="w-full justify-start h-10 relative overflow-hidden"
+              className="w-full justify-start h-10 relative"
               onClick={() => navigate("/settings")}
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
@@ -156,7 +156,7 @@ export default function SidebarNav() {
             <Separator className="my-2" />
             <Button
               variant="ghost"
-              className="w-full justify-start h-10 relative overflow-hidden"
+              className="w-full justify-start h-10 relative"
               onClick={() => logoutMutation.mutate()}
             >
               <LogOut className="h-5 w-5 flex-shrink-0" />
