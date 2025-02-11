@@ -122,7 +122,7 @@ export default function SidebarNav() {
                 <img
                   src="/logo.png"
                   alt="Sutherland Logo"
-                  className="w-full h-auto object-contain transform-gpu transition-transform duration-300 ease-in-out origin-center"
+                  className="w-full object-contain transform-gpu transition-transform duration-300 ease-in-out"
                   style={{
                     transform: isExpanded ? 'none' : 'rotate(-90deg)',
                   }}
