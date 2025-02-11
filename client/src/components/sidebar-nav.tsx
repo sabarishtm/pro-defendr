@@ -63,7 +63,7 @@ export default function SidebarNav() {
         <div
           className={cn(
             "absolute inset-0 flex items-center transition-transform duration-300 ease-in-out px-4",
-            isExpanded ? "translate-x-0" : "-translate-x-16",
+            isExpanded ? "translate-x-0" : "-translate-x-0",
           )}
         >
           <Shield className="h-8 w-8 text-primary flex-shrink-0" />
