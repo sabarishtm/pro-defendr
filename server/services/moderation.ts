@@ -3,6 +3,8 @@ import FormData from "form-data";
 import { ContentItem, ContentRegion, VideoOutput } from "@shared/schema";
 import { existsSync, statSync, readFileSync } from "fs";
 import path from "path";
+import { storage } from "../storage";
+import OpenAI from "openai";
 
 interface ModerationResult {
   status: ContentItem["status"];
@@ -12,8 +14,54 @@ interface ModerationResult {
 }
 
 export class ModerationService {
-  private async moderateText(text: string): Promise<ModerationResult> {
-    console.log("Moderating text content...");
+  private openai: OpenAI;
+
+  constructor() {
+    this.openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+
+  private async getActiveService(): Promise<"openai" | "thehive"> {
+    try {
+      const settings = await storage.getSettings();
+      const moderationSetting = settings.find(s => s.key === "moderation_service");
+      return (moderationSetting?.value === "thehive") ? "thehive" : "openai";
+    } catch (error) {
+      console.error("Error getting moderation service setting:", error);
+      return "openai"; // Default to OpenAI if setting can't be retrieved
+    }
+  }
+
+  private async moderateTextWithOpenAI(text: string): Promise<ModerationResult> {
+    try {
+      const response = await this.openai.moderations.create({ input: text });
+      const result = response.results[0];
+
+      const scores: Record<string, number> = {};
+      Object.entries(result.category_scores).forEach(([category, score]) => {
+        if (score > 0.01) { // Only include meaningful scores
+          scores[category.replace(/_/g, ' ')] = score;
+        }
+      });
+
+      return {
+        status: result.flagged ? "rejected" : "approved",
+        regions: [],
+        aiConfidence: scores,
+      };
+    } catch (error) {
+      console.error("OpenAI moderation error:", error);
+      return {
+        status: "flagged",
+        regions: [],
+        aiConfidence: { "api_error": 1.0 },
+      };
+    }
+  }
+
+  private async moderateTextWithHive(text: string): Promise<ModerationResult> {
+    console.log("Moderating text content with TheHive...");
 
     try {
       const formData = new FormData();
@@ -84,7 +132,7 @@ export class ModerationService {
     }
   }
 
-  private async moderateMedia(filePath: string): Promise<ModerationResult> {
+  private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
       const formData = new FormData();
       formData.append("media", readFileSync(filePath), {
@@ -178,28 +226,45 @@ export class ModerationService {
     }
   }
 
+  private async moderateMediaWithOpenAI(filePath: string): Promise<ModerationResult> {
+    // OpenAI doesn't support direct media moderation yet
+    // Return a default response indicating unsupported media type
+    return {
+      status: "flagged",
+      regions: [],
+      aiConfidence: { "unsupported_media_type": 1.0 },
+      output: undefined
+    };
+  }
+
   public async moderateContent(content: ContentItem): Promise<ModerationResult> {
     try {
       console.log("Starting content moderation for:", content.id);
+      const service = await this.getActiveService();
+      console.log("Using moderation service:", service);
 
       const filePath = path.join(process.cwd(), content.content);
       console.log("Using file path:", filePath);
 
-      // Verify file exists and is not empty
-      if (!existsSync(filePath)) {
-        throw new Error(`File does not exist: ${filePath}`);
-      }
-
-      const fileStats = statSync(filePath);
-      if (fileStats.size === 0) {
-        throw new Error("File is empty");
-      }
-
       if (content.type === 'text') {
-        const textContent = readFileSync(filePath, 'utf-8');
-        return await this.moderateText(textContent);
+        const textContent = content.content;
+        return service === "thehive" 
+          ? await this.moderateTextWithHive(textContent)
+          : await this.moderateTextWithOpenAI(textContent);
       } else if (content.type === 'image' || content.type === 'video') {
-        return await this.moderateMedia(filePath);
+        // For media content, verify file exists and is not empty
+        if (!existsSync(filePath)) {
+          throw new Error(`File does not exist: ${filePath}`);
+        }
+
+        const fileStats = statSync(filePath);
+        if (fileStats.size === 0) {
+          throw new Error("File is empty");
+        }
+
+        return service === "thehive"
+          ? await this.moderateMediaWithHive(filePath)
+          : await this.moderateMediaWithOpenAI(filePath);
       }
 
       throw new Error(`Unsupported content type: ${content.type}`);

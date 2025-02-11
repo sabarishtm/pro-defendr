@@ -1,8 +1,9 @@
 import { 
-  users, contentItems, cases,
+  users, contentItems, cases, settings,
   type User, type InsertUser, 
   type ContentItem, type InsertContentItem,
-  type Case, type InsertCase 
+  type Case, type InsertCase,
+  type Settings, type InsertSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, isNull } from "drizzle-orm";
@@ -31,6 +32,10 @@ export interface IStorage {
   updateCase(id: number, updates: Partial<Case>): Promise<Case>;
   getContentItemWithAssignedUser(contentId: number): Promise<ContentItem & { assignedUserName?: string }>;
   getContentItemsWithAssignedUsers(): Promise<(ContentItem & { assignedUserName?: string })[]>;
+
+  // Settings operations
+  getSettings(): Promise<Settings[]>;
+  updateSetting(key: string, value: string): Promise<Settings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -179,6 +184,30 @@ export class DatabaseStorage implements IStorage {
         return { ...item, assignedUserName: undefined };
       })
     );
+  }
+
+  async getSettings(): Promise<Settings[]> {
+    return await db.select().from(settings);
+  }
+
+  async updateSetting(key: string, value: string): Promise<Settings> {
+    const existingSetting = await db.select()
+      .from(settings)
+      .where(eq(settings.key, key))
+      .limit(1);
+
+    if (existingSetting.length > 0) {
+      const [updated] = await db.update(settings)
+        .set({ value, updatedAt: new Date() })
+        .where(eq(settings.key, key))
+        .returning();
+      return updated;
+    } else {
+      const [newSetting] = await db.insert(settings)
+        .values({ key, value, updatedAt: new Date() })
+        .returning();
+      return newSetting;
+    }
   }
 }
 

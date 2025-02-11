@@ -41,6 +41,27 @@ export const aiAnalysisSchema = z.object({
 
 export type AIAnalysis = z.infer<typeof aiAnalysisSchema>;
 
+// Settings Types
+export const ModerationType = {
+  OPENAI: "openai",
+  THEHIVE: "thehive",
+} as const;
+
+export type ModerationType = typeof ModerationType[keyof typeof ModerationType];
+
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertSettingsSchema = createInsertSchema(settings);
+
+export type Settings = typeof settings.$inferSelect;
+export type InsertSettings = z.infer<typeof insertSettingsSchema>;
+
+
 // Role and Permission Types
 export const UserRole = {
   AGENT: "agent",

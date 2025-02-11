@@ -2,7 +2,7 @@ import { Express, Request, Response } from "express";
 import express from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { loginSchema, insertCaseSchema, decisionSchema, Permission, UserRole } from "@shared/schema";
+import { loginSchema, insertCaseSchema, decisionSchema, Permission, UserRole, settings } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import multer from "multer";
@@ -49,6 +49,21 @@ export function registerRoutes(app: Express) {
       cookie: { secure: process.env.NODE_ENV === "production" },
     })
   );
+
+  // Initialize default settings if they don't exist
+  (async () => {
+    try {
+      const settings = await storage.getSettings();
+      const moderationSetting = settings.find(s => s.key === "moderation_service");
+
+      if (!moderationSetting) {
+        await storage.updateSetting("moderation_service", "openai");
+        console.log("Initialized default moderation service setting to OpenAI");
+      }
+    } catch (error) {
+      console.error("Error initializing settings:", error);
+    }
+  })();
 
   // Authentication
   app.post("/api/login", async (req: Request, res: Response) => {
@@ -182,7 +197,7 @@ export function registerRoutes(app: Express) {
             category: nextItem.type,
             confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
             suggestedAction: moderationResult.status === "approved" ? "approve" :
-                             moderationResult.status === "rejected" ? "reject" : "review",
+                              moderationResult.status === "rejected" ? "reject" : "review",
           },
           contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
             type,
@@ -646,6 +661,51 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error creating test content:", error);
       res.status(500).json({ message: "Error creating test content" });
+    }
+  });
+
+  app.get("/api/settings", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(401).json({ message: "User not found" });
+
+      checkPermission(user.role, Permission.MANAGE_SETTINGS);
+
+      const settingsData = await storage.getSettings();
+      res.json(settingsData);
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.patch("/api/settings", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(401).json({ message: "User not found" });
+
+      checkPermission(user.role, Permission.MANAGE_SETTINGS);
+
+      const { key, value } = req.body;
+      if (!key || !value) {
+        return res.status(400).json({ message: "Missing key or value" });
+      }
+
+      const updatedSettings = await storage.updateSetting(key, value);
+      res.json(updatedSettings);
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to update setting" });
     }
   });
 
