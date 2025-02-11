@@ -51,6 +51,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   // Filter items
   const filteredItems = items.filter(item =>
+    item.name?.toLowerCase().includes(filter.toLowerCase()) ||
     item.content.toLowerCase().includes(filter.toLowerCase()) ||
     item.type.toLowerCase().includes(filter.toLowerCase()) ||
     item.status.toLowerCase().includes(filter.toLowerCase())
@@ -80,6 +81,15 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
       setSortField(field);
       setSortDirection("desc");
     }
+  };
+
+  // Helper function to get display name
+  const getDisplayName = (item: ContentItem) => {
+    if (item.name) return item.name;
+    if (item.type === "text") return item.content.slice(0, 15);
+    // For media content, extract filename from path
+    const fileName = item.content.split('/').pop() || '';
+    return fileName.split('.')[0].slice(0, 15);
   };
 
   const SortableHeader = ({ field, children }: { field: keyof ContentItem, children: React.ReactNode }) => (
@@ -158,7 +168,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHeader field="content">Content</SortableHeader>
+                <SortableHeader field="name">Content</SortableHeader>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
                 <SortableHeader field="status">Status</SortableHeader>
@@ -173,7 +183,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   onClick={() => onOpenModeration?.(item)}
                 >
                   <TableCell className="max-w-[400px] truncate">
-                    {item.content}
+                    {getDisplayName(item)}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{item.type}</Badge>
