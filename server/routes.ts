@@ -304,8 +304,8 @@ export function registerRoutes(app: Express) {
       const cases = await storage.getCases();
       const contentCases = cases.filter(c => c.contentId === contentId);
 
-      // Don't allow deletion if there are open cases or content is assigned
-      if (contentCases.some(c => c.status === "open") || item.assignedTo) {
+      // Don't allow deletion if there are open cases or content is being actively moderated
+      if (contentCases.some(c => c.status === "open") || (item.status === "pending" && item.assignedTo)) {
         return res.status(400).json({ 
           message: "Cannot delete content that is currently being moderated or has open cases" 
         });
