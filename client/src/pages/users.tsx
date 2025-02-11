@@ -32,6 +32,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { UserTable } from "@/components/user-table";
 
 export default function UsersPage() {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -47,10 +48,6 @@ export default function UsersPage() {
       email: "",
       role: UserRole.AGENT,
     },
-  });
-
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["/api/users"],
   });
 
   const createUserMutation = useMutation({
@@ -79,8 +76,13 @@ export default function UsersPage() {
     createUserMutation.mutate(values);
   };
 
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["/api/users"],
+  });
+
+
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">User Management</h1>
         <Button onClick={() => setShowAddForm(!showAddForm)}>
@@ -210,6 +212,7 @@ export default function UsersPage() {
         </Card>
       )}
 
+      <UserTable />
       {isLoading ? (
         <div className="flex items-center justify-center p-8">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

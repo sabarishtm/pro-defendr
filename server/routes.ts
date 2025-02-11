@@ -550,6 +550,31 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Add this route after the existing user routes
+  app.patch("/api/users/:id", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const currentUser = await storage.getUser(userId);
+      checkPermission(currentUser.role, Permission.MANAGE_USERS);
+
+      const targetUserId = parseInt(req.params.id);
+      if (isNaN(targetUserId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      const updatedUser = await storage.updateUser(targetUserId, req.body);
+      res.json({ ...updatedUser, password: undefined });
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Add sample content creation endpoint for testing
   app.post("/api/content/test", async (req: Request, res: Response) => {
     const userId = req.session.userId;

@@ -9,9 +9,11 @@ import { eq, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
+  getUsers(): Promise<User[]>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, updates: Partial<User>): Promise<User>;
   updateUserStatus(id: number, status: string): Promise<User>;
 
   // Content operations  
@@ -27,12 +29,15 @@ export interface IStorage {
   getCase(id: number): Promise<Case | undefined>;
   createCase(caseData: InsertCase): Promise<Case>;
   updateCase(id: number, updates: Partial<Case>): Promise<Case>;
-  // Add new method to get assigned user info
   getContentItemWithAssignedUser(contentId: number): Promise<ContentItem & { assignedUserName?: string }>;
   getContentItemsWithAssignedUsers(): Promise<(ContentItem & { assignedUserName?: string })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -45,6 +50,16 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    if (!user) throw new Error("User not found");
     return user;
   }
 
