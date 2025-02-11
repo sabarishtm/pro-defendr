@@ -1,0 +1,49 @@
+:51:19 PM [express] GET /api/content/33 304 in 32ms :: {"id":33,"content":"test test mod 2","type":…
+Error updating case decision: ZodError: [
+  {
+    "received": "review",
+    "code": "invalid_enum_value",
+    "options": [
+      "approve",
+      "reject"
+    ],
+    "path": [
+      "decision"
+    ],
+    "message": "Invalid enum value. Expected 'approve' | 'reject', received 'review'"
+  }
+]
+    at get error [as error] (file:///home/runner/workspace/node_modules/zod/lib/index.mjs:587:31)
+    at ZodObject.parse (file:///home/runner/workspace/node_modules/zod/lib/index.mjs:692:22)
+    at <anonymous> (/home/runner/workspace/server/routes.ts:310:35)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at Immediate._onImmediate (/home/runner/workspace/node_modules/express-session/index.js:514:7)
+    at process.processImmediate (node:internal/timers:485:21) {
+  issues: [
+    {
+      received: 'review',
+      code: 'invalid_enum_value',
+      options: [Array],
+      path: [Array],
+      message: "Invalid enum value. Expected 'approve' | 'reject', received 'review'"
+    }
+  ],
+  addIssue: [Function (anonymous)],
+  addIssues: [Function (anonymous)],
+  errors: [
+    {
+      received: 'review',
+      code: 'invalid_enum_value',
+      options: [Array],
+      path: [Array],
+      message: "Invalid enum value. Expected 'approve' | 'reject', received 'review'"
+    }
+  ]
+}
+7:51:21 PM [express] PATCH /api/cases/decision 500 in 2ms :: {"message":"Error updating case decisio…
