@@ -9,10 +9,12 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ContentQueue from "@/components/content-queue"; // Changed to default import
+import ContentQueue from "@/components/content-queue";
 import type { ContentItem, ModerationCase } from "@shared/schema";
+import { useLocation } from "wouter";
 
 export default function Queue() {
+  const [location, setLocation] = useLocation();
   const [activeCase, setActiveCase] = useState<{
     content: ContentItem;
     case: ModerationCase;
@@ -147,10 +149,20 @@ export default function Queue() {
         </Card>
       )}
 
-      {/* Add the content queue with search/sort/pagination */}
-      <ContentQueue onOpenModeration={handleOpenModeration} />
+      <ContentQueue 
+        onOpenModeration={(item) => {
+          if (item.status === "pending") {
+            handleOpenModeration(item);
+          } else {
+            toast({
+              title: "Content Already Reviewed",
+              description: `This content has already been ${item.status}.`,
+              variant: "default"
+            });
+          }
+        }} 
+      />
 
-      {/* Show the next item to moderate */}
       {isLoading ? (
         <div className="flex items-center justify-center p-8">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

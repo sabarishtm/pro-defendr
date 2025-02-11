@@ -50,7 +50,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   });
 
   // Filter items
-  const filteredItems = items.filter(item => 
+  const filteredItems = items.filter(item =>
     item.content.toLowerCase().includes(filter.toLowerCase()) ||
     item.type.toLowerCase().includes(filter.toLowerCase()) ||
     item.status.toLowerCase().includes(filter.toLowerCase())
@@ -84,8 +84,8 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   const SortableHeader = ({ field, children }: { field: keyof ContentItem, children: React.ReactNode }) => (
     <TableHead>
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         onClick={() => toggleSort(field)}
         className="hover:bg-muted px-2 py-1 -ml-2"
       >
@@ -133,8 +133,8 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                 className="w-[300px]"
               />
             </div>
-            <Select 
-              value={pageSize.toString()} 
+            <Select
+              value={pageSize.toString()}
               onValueChange={(value) => {
                 setPageSize(Number(value));
                 setPage(1); // Reset to first page on size change
@@ -167,7 +167,11 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             </TableHeader>
             <TableBody>
               {paginatedItems.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow
+                  key={item.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => onOpenModeration?.(item)}
+                >
                   <TableCell className="max-w-[400px] truncate">
                     {item.content}
                   </TableCell>
@@ -181,8 +185,8 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   </TableCell>
                   <TableCell>
                     <Badge variant={
-                      item.status === "approved" 
-                        ? "secondary" 
+                      item.status === "approved"
+                        ? "secondary"
                         : item.status === "rejected"
                         ? "destructive"
                         : "outline"
@@ -191,15 +195,16 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {onOpenModeration && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onOpenModeration(item)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent row click
+                        onOpenModeration?.(item);
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
