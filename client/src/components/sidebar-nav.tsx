@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,25 +50,20 @@ export default function SidebarNav() {
         "p-6 transition-all duration-300 flex items-center relative h-[72px]",
         !isExpanded && "p-3"
       )}>
-        <div className="relative w-full h-full">
-          <img 
-            src="./logo-small.png"
-            alt="Sutherland Logo"
-            className={cn(
-              "absolute left-0 top-1/2 -translate-y-1/2 h-auto transition-all duration-300",
-              "w-8",
-              isExpanded ? "opacity-0" : "opacity-100"
-            )}
-          />
-          <img 
-            src="./logo.png"
-            alt="Sutherland Logo"
-            className={cn(
-              "absolute left-0 top-1/2 -translate-y-1/2 h-auto transition-all duration-300",
-              "w-48",
-              isExpanded ? "opacity-100" : "opacity-0 scale-75"
-            )}
-          />
+        <div className="relative w-full h-full flex items-center">
+          <div className={cn(
+            "flex items-center gap-2 transition-all duration-300",
+            isExpanded ? "opacity-100" : "opacity-0 scale-75"
+          )}>
+            <Shield className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold">Defendr</span>
+          </div>
+          <div className={cn(
+            "absolute left-0 top-1/2 -translate-y-1/2 transition-all duration-300",
+            isExpanded ? "opacity-0" : "opacity-100"
+          )}>
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
         </div>
         <ChevronRight className={cn(
           "h-5 w-5 transition-transform duration-300 ml-auto",
