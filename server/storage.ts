@@ -153,10 +153,9 @@ export class DatabaseStorage implements IStorage {
     const items = await db
       .select()
       .from(contentItems)
-      .orderBy((cols) => [cols.createdAt])
-      .prepare();
+      .orderBy(contentItems.createdAt);
 
-    const itemsWithUsers = await Promise.all(
+    return Promise.all(
       items.map(async (item) => {
         if (item.assignedTo) {
           const user = await this.getUser(item.assignedTo);
@@ -165,7 +164,6 @@ export class DatabaseStorage implements IStorage {
         return { ...item, assignedUserName: undefined };
       })
     );
-    return itemsWithUsers;
   }
 }
 
