@@ -37,16 +37,15 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", data);
-      return res.json();
+      return await apiRequest("POST", "/api/login", data);
     },
     onSuccess: () => {
       navigate("/dashboard");
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Invalid credentials",
+        description: error instanceof Error ? error.message : "Invalid credentials",
         variant: "destructive",
       });
     },

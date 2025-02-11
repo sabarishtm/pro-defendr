@@ -33,13 +33,28 @@ export function registerRoutes(app: Express) {
       const data = loginSchema.parse(req.body);
       const user = await storage.getUserByUsername(data.username);
 
-      if (!user || user.password !== data.password) {
+      if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
+
+      // Add more detailed logging
+      console.log("Login attempt:", {
+        username: data.username,
+        providedPassword: data.password,
+        storedPassword: user.password,
+        passwordMatch: data.password === user.password
+      });
+
+      if (user.password !== data.password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
       req.session.userId = user.id;
-      res.json({ user: { ...user, password: undefined } });
+      console.log("Login successful, session:", req.session);
+      return res.json({ user: { ...user, password: undefined } });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Login error:", error);
+      return res.status(400).json({ message: "Invalid request" });
     }
   });
 
