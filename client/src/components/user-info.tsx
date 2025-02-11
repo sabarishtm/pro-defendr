@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { UserCircle } from "lucide-react";
 
 export default function UserInfo() {
   const { data: user } = useQuery<User>({
     queryKey: ["/api/users/me"],
+    staleTime: 0, // Ensure we always get fresh data
+    cacheTime: 0  // Don't cache the user data
   });
 
   if (!user) return null;

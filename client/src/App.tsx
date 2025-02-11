@@ -17,12 +17,12 @@ import UserInfo from "@/components/user-info";
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
-      <div className="w-64 border-r bg-card">
-        <div className="flex flex-col h-full">
-          <div className="border-b">
-            <UserInfo />
-          </div>
+      <div className="w-64 border-r bg-card flex flex-col">
+        <div className="flex-1">
           <SidebarNav />
+        </div>
+        <div className="border-t">
+          <UserInfo />
         </div>
       </div>
       <main className="flex-1 overflow-auto">
