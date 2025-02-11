@@ -8,6 +8,8 @@ import { Loader2, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input"; // Fixed import
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ContentQueue from "@/components/content-queue";
 import { UploadForm } from "@/components/upload-form";
@@ -23,6 +25,7 @@ export default function Queue() {
   const [, setLocation] = useLocation();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [newContent, setNewContent] = useState("");
+  const [contentName, setContentName] = useState("");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -33,10 +36,12 @@ export default function Queue() {
 
   const uploadMutation = useMutation({
     mutationFn: async (content: string) => {
+      const name = contentName || content.slice(0, 15);
       return await apiRequest("POST", "/api/content", {
         content,
         type: "text",
         priority: 1,
+        name,
         metadata: {
           originalMetadata: {},
         },
@@ -44,6 +49,7 @@ export default function Queue() {
     },
     onSuccess: () => {
       setNewContent("");
+      setContentName("");
       setShowUploadForm(false);
       queryClient.invalidateQueries({ queryKey: ["/api/content/next"] });
       toast({
@@ -101,12 +107,26 @@ export default function Queue() {
                   }}
                   className="space-y-4"
                 >
-                  <Textarea
-                    value={newContent}
-                    onChange={(e) => setNewContent(e.target.value)}
-                    placeholder="Enter content to test AI moderation..."
-                    className="min-h-[100px]"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="contentName">Content Name (Optional)</Label>
+                    <Input
+                      id="contentName"
+                      value={contentName}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContentName(e.target.value)}
+                      placeholder="Enter a name for this content"
+                      maxLength={50}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea
+                      id="content"
+                      value={newContent}
+                      onChange={(e) => setNewContent(e.target.value)}
+                      placeholder="Enter content to test AI moderation..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
                   <Button 
                     type="submit" 
                     disabled={uploadMutation.isPending || !newContent.trim()}

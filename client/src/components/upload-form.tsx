@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FileVideo, FileImage, Loader2, Upload } from "lucide-react";
-//import { apiRequest } from "@/lib/queryClient"; //Removed as apiRequest is no longer used
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function UploadForm() {
   const [file, setFile] = useState<File | null>(null);
+  const [name, setName] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -29,6 +29,7 @@ export function UploadForm() {
     },
     onSuccess: () => {
       setFile(null);
+      setName("");
       setPreviewUrl(null);
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
       toast({
@@ -65,6 +66,12 @@ export function UploadForm() {
     setPreviewUrl(url);
     setFile(selectedFile);
 
+    // Set default name from filename if no custom name is provided
+    if (!name) {
+      const filename = selectedFile.name.split('.')[0];
+      setName(filename.slice(0, 15));
+    }
+
     // Cleanup previous preview URL
     return () => URL.revokeObjectURL(url);
   };
@@ -76,6 +83,7 @@ export function UploadForm() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', file.type.split('/')[0]);
+    formData.append('name', name || file.name.slice(0, 15));
 
     uploadMutation.mutate(formData);
   };
@@ -87,6 +95,17 @@ export function UploadForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Content Name</Label>
+            <Input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter a name for this content"
+              maxLength={50}
+            />
+          </div>
+
           <div>
             <Label htmlFor="file">Select File (Images or Videos)</Label>
             <Input

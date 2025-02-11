@@ -244,10 +244,16 @@ export function registerRoutes(app: Express) {
       const fileUrl = `/uploads/${req.file.filename}`;
       const fileType = req.body.type || "image"; // Default to image if not specified
 
+      // Get the content name from the request, or generate from filename
+      const providedName = req.body.name?.trim();
+      const fileName = req.file.originalname.split('.')[0];
+      const contentName = providedName || fileName.slice(0, 15);
+
       const newContent = await storage.createContentItem({
         content: fileUrl,
         type: fileType,
         priority: 1,
+        name: contentName,
         metadata: {
           originalMetadata: {
             filename: req.file.originalname,
