@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { QueueItem } from "@/components/moderation/queue-item";
-import { CaseDetails } from "@/components/moderation/case-details";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus } from "lucide-react";
@@ -10,15 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ContentQueue from "@/components/content-queue";
-import type { ContentItem, ModerationCase } from "@shared/schema";
-import { useLocation } from "wouter";
+import type { ContentItem } from "@shared/schema";
 
 export default function Queue() {
-  const [location, setLocation] = useLocation();
-  const [activeCase, setActiveCase] = useState<{
-    content: ContentItem;
-    case: ModerationCase;
-  } | null>(null);
+  const [, setLocation] = useLocation();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [newContent, setNewContent] = useState("");
 
@@ -27,7 +22,6 @@ export default function Queue() {
 
   const { data: nextItem, isLoading } = useQuery<ContentItem>({
     queryKey: ["/api/content/next"],
-    enabled: !activeCase,
   });
 
   const uploadMutation = useMutation({
@@ -59,55 +53,17 @@ export default function Queue() {
     },
   });
 
-  const assignMutation = useMutation({
-    mutationFn: async (contentId: number) => {
-      const content = await apiRequest("POST", `/api/content/${contentId}/assign`, {
-        agentId: 1 // Hardcoded for demo
-      });
-
-      const case_ = await apiRequest("POST", "/api/cases", {
-        contentId,
-        agentId: 1,
-      });
-
-      return { content, case: case_ };
-    },
-    onSuccess: (data) => {
-      setActiveCase({
-        content: data.content,
-        case: data.case,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/content/next"] });
-    },
-    onError: () => {
+  const handleOpenModeration = async (item: ContentItem) => {
+    if (item.status === "pending") {
+      setLocation(`/moderate/${item.id}`);
+    } else {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to assign content. Please try again."
+        title: "Content Already Reviewed",
+        description: `This content has already been ${item.status}.`,
+        variant: "default"
       });
     }
-  });
-
-  function handleComplete() {
-    setActiveCase(null);
-    queryClient.invalidateQueries({ queryKey: ["/api/content/next"] });
-  }
-
-  const handleOpenModeration = async (item: ContentItem) => {
-    assignMutation.mutate(item.id);
   };
-
-  if (activeCase) {
-    return (
-      <div className="p-8 max-w-4xl mx-auto">
-        <CaseDetails
-          contentItem={activeCase.content}
-          moderationCase={activeCase.case}
-          onComplete={handleComplete}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
@@ -149,19 +105,7 @@ export default function Queue() {
         </Card>
       )}
 
-      <ContentQueue 
-        onOpenModeration={(item) => {
-          if (item.status === "pending") {
-            handleOpenModeration(item);
-          } else {
-            toast({
-              title: "Content Already Reviewed",
-              description: `This content has already been ${item.status}.`,
-              variant: "default"
-            });
-          }
-        }} 
-      />
+      <ContentQueue onOpenModeration={handleOpenModeration} />
 
       {isLoading ? (
         <div className="flex items-center justify-center p-8">
@@ -170,7 +114,7 @@ export default function Queue() {
       ) : nextItem ? (
         <QueueItem
           item={nextItem}
-          onAssign={() => assignMutation.mutate(nextItem.id)}
+          onAssign={() => handleOpenModeration(nextItem)}
         />
       ) : (
         <Alert>
