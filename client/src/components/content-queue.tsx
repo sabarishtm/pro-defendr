@@ -87,20 +87,22 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     },
   });
 
-  // Filter items
+  // Filter items with null check for name
   const filteredItems = items.filter(item =>
-    item.name?.toLowerCase().includes(filter.toLowerCase()) ||
+    (item.name || "").toLowerCase().includes(filter.toLowerCase()) ||
     item.content.toLowerCase().includes(filter.toLowerCase()) ||
     item.type.toLowerCase().includes(filter.toLowerCase()) ||
     item.status.toLowerCase().includes(filter.toLowerCase())
   );
 
-  // Sort items
+  // Sort items with null checks
   const sortedItems = [...filteredItems].sort((a, b) => {
     const aValue = a[sortField];
     const bValue = b[sortField];
 
-    if (aValue === bValue) return 0;
+    if (aValue === null && bValue === null) return 0;
+    if (aValue === null) return sortDirection === "asc" ? 1 : -1;
+    if (bValue === null) return sortDirection === "asc" ? -1 : 1;
 
     const direction = sortDirection === "asc" ? 1 : -1;
     return aValue < bValue ? -direction : direction;
@@ -121,11 +123,10 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     }
   };
 
-  // Helper function to get display name
+  // Helper function to get display name with null check
   const getDisplayName = (item: ContentItem) => {
     if (item.name) return item.name;
     if (item.type === "text") return item.content.slice(0, 15);
-    // For media content, extract filename from path
     const fileName = item.content.split('/').pop() || '';
     return fileName.split('.')[0].slice(0, 15);
   };
@@ -242,7 +243,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[140px]">Preview</TableHead>
-                <SortableHeader field="name">Content</SortableHeader>
+                <TableHead>Content</TableHead>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
                 <SortableHeader field="status">Status</SortableHeader>

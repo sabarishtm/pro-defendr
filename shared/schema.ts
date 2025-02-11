@@ -37,6 +37,7 @@ export const contentItems = pgTable("content_items", {
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   priority: integer("priority").notNull().default(1),
   assignedTo: integer("assigned_to").references(() => users.id),
+  name: text("name"), // Add name field
   metadata: jsonb("metadata").notNull().$type<{
     aiAnalysis?: AIAnalysis;
     originalMetadata: Record<string, unknown>;
@@ -68,6 +69,7 @@ export const insertContentSchema = createInsertSchema(contentItems)
     type: true,
     priority: true,
     metadata: true,
+    name: true, // Add name to schema
   })
   .extend({
     metadata: z.object({
