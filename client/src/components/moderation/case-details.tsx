@@ -6,12 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import type { ContentItem, ModerationCase } from "@shared/schema";
-import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon, FileText, Video, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, AlertTriangle, Brain, ImageIcon, FileText, Video, X, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
@@ -27,6 +28,8 @@ export function CaseDetails({
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState(false);
+  const [blurLevel, setBlurLevel] = useState(75); // Initial 75% blur
+  const [isBlurred, setIsBlurred] = useState(true);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -67,6 +70,14 @@ export function CaseDetails({
     setLocation("/dashboard");
   };
 
+  const getBlurStyle = () => {
+    if (!isBlurred) return {};
+    return {
+      filter: `blur(${blurLevel / 10}px)`,
+      transition: 'filter 0.3s ease-in-out'
+    };
+  };
+
   const renderContent = () => {
     const type = contentItem.type?.toLowerCase() || 'text';
 
@@ -101,14 +112,53 @@ export function CaseDetails({
                 </div>
               </div>
             ) : (
-              <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
-                <img 
-                  src={contentItem.content} 
-                  alt="Content for review"
-                  className="w-full max-h-[500px] object-contain"
-                  onError={() => setMediaError(true)}
-                />
-              </div>
+              <>
+                <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
+                  <img 
+                    src={contentItem.content} 
+                    alt="Content for review"
+                    className="w-full max-h-[500px] object-contain"
+                    style={getBlurStyle()}
+                    onError={() => setMediaError(true)}
+                  />
+                </div>
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={isBlurred}
+                        onCheckedChange={setIsBlurred}
+                        aria-label="Toggle blur"
+                      />
+                      <span className="text-sm font-medium">
+                        {isBlurred ? (
+                          <div className="flex items-center gap-1">
+                            <EyeOff className="h-4 w-4" />
+                            <span>Blur enabled</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" />
+                            <span>Blur disabled</span>
+                          </div>
+                        )}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      Blur level: {blurLevel}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[blurLevel]}
+                    onValueChange={([value]) => setBlurLevel(value)}
+                    max={100}
+                    min={0}
+                    step={5}
+                    className="w-full"
+                    disabled={!isBlurred}
+                  />
+                </div>
+              </>
             )}
           </div>
         );
@@ -128,16 +178,55 @@ export function CaseDetails({
                 </div>
               </div>
             ) : (
-              <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
-                <video
-                  src={contentItem.content}
-                  controls
-                  className="w-full max-h-[500px]"
-                  onError={() => setMediaError(true)}
-                >
-                  Your browser does not support the video tag.
-                </video>
-              </div>
+              <>
+                <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
+                  <video
+                    src={contentItem.content}
+                    controls
+                    className="w-full max-h-[500px]"
+                    style={getBlurStyle()}
+                    onError={() => setMediaError(true)}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+                <div className="space-y-4 pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={isBlurred}
+                        onCheckedChange={setIsBlurred}
+                        aria-label="Toggle blur"
+                      />
+                      <span className="text-sm font-medium">
+                        {isBlurred ? (
+                          <div className="flex items-center gap-1">
+                            <EyeOff className="h-4 w-4" />
+                            <span>Blur enabled</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" />
+                            <span>Blur disabled</span>
+                          </div>
+                        )}
+                      </span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      Blur level: {blurLevel}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[blurLevel]}
+                    onValueChange={([value]) => setBlurLevel(value)}
+                    max={100}
+                    min={0}
+                    step={5}
+                    className="w-full"
+                    disabled={!isBlurred}
+                  />
+                </div>
+              </>
             )}
           </div>
         );
@@ -173,23 +262,6 @@ export function CaseDetails({
           <X className="h-4 w-4 mr-2" />
           Close
         </Button>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Content Sensitivity</span>
-          <span className="text-sm text-muted-foreground">
-            {contentItem.priority === 1 ? "Low" : "High"}
-          </span>
-        </div>
-        <Slider
-          value={[contentItem.priority]}
-          max={2}
-          min={1}
-          step={1}
-          disabled
-          className="w-full"
-        />
       </div>
 
       {contentItem.metadata?.aiAnalysis?.contentFlags?.length > 0 && (
