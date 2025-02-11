@@ -41,13 +41,13 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   const { toast } = useToast();
 
-  const { data: response, isLoading } = useQuery<{ items: ContentItem[], total: number }>({
+  const { data: items = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content", page, pageSize, sortField, sortOrder],
   });
 
-  const items = response?.items ?? [];
-  const totalItems = response?.total ?? 0;
+  const totalItems = items.length;
   const totalPages = Math.ceil(totalItems / pageSize);
+  const displayItems = items.slice((page - 1) * pageSize, page * pageSize);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -136,7 +136,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => (
+            {displayItems.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-medium max-w-xs truncate">
                   {item.content}
@@ -226,7 +226,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
         <div className="flex justify-between items-center mt-4">
           <div className="text-sm text-muted-foreground">
-            Showing {items.length} of {totalItems} items
+            Showing {displayItems.length} of {totalItems} items
           </div>
           <div className="flex gap-2">
             <Button
