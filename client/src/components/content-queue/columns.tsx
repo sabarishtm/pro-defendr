@@ -30,6 +30,8 @@ export const columns: ColumnDef<ContentItem>[] = [
         </div>
       );
     },
+    sortingFn: "text",
+    filterFn: "includesString",
   },
   {
     accessorKey: "type",
@@ -48,6 +50,8 @@ export const columns: ColumnDef<ContentItem>[] = [
       const type = row.getValue("type") as string;
       return <Badge variant="outline">{type}</Badge>;
     },
+    sortingFn: "text",
+    filterFn: "includesString",
   },
   {
     accessorKey: "priority",
@@ -70,6 +74,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
+    sortingFn: "number",
   },
   {
     accessorKey: "status",
@@ -98,6 +103,8 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
+    sortingFn: "text",
+    filterFn: "includesString",
   },
   {
     id: "actions",
