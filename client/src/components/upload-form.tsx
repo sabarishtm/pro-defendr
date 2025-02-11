@@ -31,7 +31,9 @@ export function UploadForm() {
       setFile(null);
       setName("");
       setPreviewUrl(null);
+      // Invalidate both content list and next content queries
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content/next"] });
       toast({
         title: "Upload successful",
         description: "Your content has been uploaded and will be analyzed.",
