@@ -51,12 +51,8 @@ export const RolePermissions = {
     Permission.VIEW_REPORTS,
   ],
   [UserRole.ADMIN]: [
-    Permission.REVIEW_CONTENT,
-    Permission.ASSIGN_CONTENT,
     Permission.MANAGE_USERS,
-    Permission.VIEW_REPORTS,
     Permission.MANAGE_SETTINGS,
-    Permission.OVERRIDE_DECISIONS,
   ],
 } as const;
 

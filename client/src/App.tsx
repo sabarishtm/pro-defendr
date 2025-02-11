@@ -10,6 +10,7 @@ import Reports from "@/pages/reports";
 import Team from "@/pages/team";
 import Settings from "@/pages/settings";
 import ModeratePage from "@/pages/moderate";
+import Users from "@/pages/users";
 import SidebarNav from "@/components/sidebar-nav";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/reports" component={() => <PrivateRoute component={Reports} />} />
       <Route path="/team" component={() => <PrivateRoute component={Team} />} />
       <Route path="/settings" component={() => <PrivateRoute component={Settings} />} />
+      <Route path="/users" component={() => <PrivateRoute component={Users} />} />
       <Route path="/moderate/:id" component={(params) => <PrivateRoute component={ModeratePage} params={params} />} />
       <Route component={NotFound} />
     </Switch>
