@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import AgentStatus from "@/components/agent-status";
 import ContentQueue from "@/components/content-queue";
 import PerformanceStats from "@/components/performance-stats";
+import ContentTypeStats from "@/components/content-type-stats";
 import {
   Card,
   CardContent,
@@ -12,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { InboxIcon, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { InboxIcon, CheckCircle, XCircle, AlertCircle, Clock } from "lucide-react";
 import type { ContentItem } from "@shared/schema";
 
 export default function Dashboard() {
@@ -26,6 +27,11 @@ export default function Dashboard() {
     queryKey: ["/api/content"],
   });
 
+  const { data: cases = [] } = useQuery({
+    queryKey: ["/api/cases"],
+  });
+
+  // Calculate stats
   const stats = content.reduce(
     (acc, item) => {
       acc.total++;
@@ -36,6 +42,15 @@ export default function Dashboard() {
     },
     { total: 0, pending: 0, approved: 0, rejected: 0 }
   );
+
+  // Calculate additional metrics
+  const approvalRate = stats.total > 0 
+    ? ((stats.approved / stats.total) * 100).toFixed(1) 
+    : "0.0";
+
+  const avgProcessingTime = cases.length > 0
+    ? "92.5%" // Mocked for now, would calculate from actual timestamps
+    : "0.0%";
 
   const handleOpenModeration = (item: ContentItem) => {
     setLocation(`/moderate/${item.id}`);
@@ -52,7 +67,7 @@ export default function Dashboard() {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -96,6 +111,17 @@ export default function Dashboard() {
               <XCircle className="h-4 w-4 text-red-500" />
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Approval Rate
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-baseline space-x-2">
+              <div className="text-2xl font-bold">{approvalRate}%</div>
+              <Clock className="h-4 w-4 text-blue-500" />
+            </CardContent>
+          </Card>
         </div>
       </header>
 
@@ -114,11 +140,11 @@ export default function Dashboard() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Content Type Processing</CardTitle>
-                <CardDescription>Average processing time by type</CardDescription>
+                <CardTitle>Content Type Processing Time</CardTitle>
+                <CardDescription>Average processing time by content type</CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Add processing time chart component here */}
+                <ContentTypeStats />
               </CardContent>
             </Card>
           </div>
