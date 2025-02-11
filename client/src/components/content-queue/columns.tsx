@@ -12,55 +12,53 @@ export const columns: ColumnDef<ContentItem>[] = [
   {
     accessorKey: "content",
     header: ({ column }) => {
+      const sorted = column.getIsSorted();
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(sorted === "asc")}
+          className="hover:bg-muted px-0"
         >
           Content
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
         </Button>
       );
     },
-    cell: ({ row }) => {
-      const content = row.getValue("content") as string;
-      return (
-        <div className="max-w-[500px] truncate">
-          {content}
-        </div>
-      );
-    },
-    sortingFn: "text"
+    cell: ({ row }) => (
+      <div className="max-w-[500px] truncate">{row.getValue("content")}</div>
+    ),
   },
   {
     accessorKey: "type",
     header: ({ column }) => {
+      const sorted = column.getIsSorted();
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(sorted === "asc")}
+          className="hover:bg-muted px-0"
         >
           Type
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
         </Button>
       );
     },
-    cell: ({ row }) => {
-      const type = row.getValue("type") as string;
-      return <Badge variant="outline">{type}</Badge>;
-    },
-    sortingFn: "text"
+    cell: ({ row }) => (
+      <Badge variant="outline">{row.getValue("type")}</Badge>
+    ),
   },
   {
     accessorKey: "priority",
     header: ({ column }) => {
+      const sorted = column.getIsSorted();
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(sorted === "asc")}
+          className="hover:bg-muted px-0"
         >
           Priority
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
         </Button>
       );
     },
@@ -72,18 +70,19 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
-    sortingFn: "number"
   },
   {
     accessorKey: "status",
     header: ({ column }) => {
+      const sorted = column.getIsSorted();
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(sorted === "asc")}
+          className="hover:bg-muted px-0"
         >
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
         </Button>
       );
     },
@@ -101,23 +100,19 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
-    sortingFn: "text"
   },
   {
     id: "actions",
     cell: ({ row, table }) => {
-      const item = row.original;
       const meta = table.options.meta as TableMeta;
       return (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => meta.onOpenModeration?.(item)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => meta.onOpenModeration?.(row.original)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
       );
     },
   },
