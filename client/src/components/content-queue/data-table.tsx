@@ -1,10 +1,7 @@
-import { useState } from "react";
 import {
   ColumnDef,
-  SortingState,
   flexRender,
   getCoreRowModel,
-  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -28,20 +25,14 @@ export function DataTable({
   data,
   onOpenModeration,
 }: DataTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([]);
-
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
-    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    meta: { onOpenModeration },
   });
 
   return (
-    <div>
+    <div className="rounded-md border">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

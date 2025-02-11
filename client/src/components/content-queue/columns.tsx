@@ -1,33 +1,17 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import type { ContentItem } from "@shared/schema";
 
 interface TableMeta {
   onOpenModeration?: (item: ContentItem) => void;
 }
 
-const SortButton = ({ column, children }: { column: any; children: React.ReactNode }) => {
-  const sorted = column.getIsSorted();
-  return (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(sorted === "asc")}
-      className="-ml-4"
-    >
-      {children}
-      <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-40"}`} />
-    </Button>
-  );
-};
-
 export const columns: ColumnDef<ContentItem>[] = [
   {
     accessorKey: "content",
-    header: ({ column }) => (
-      <SortButton column={column}>Content</SortButton>
-    ),
+    header: "Content",
     cell: ({ row }) => (
       <div className="max-w-[400px] truncate">
         {row.getValue("content")}
@@ -36,18 +20,14 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     accessorKey: "type",
-    header: ({ column }) => (
-      <SortButton column={column}>Type</SortButton>
-    ),
+    header: "Type",
     cell: ({ row }) => (
       <Badge variant="outline">{row.getValue("type")}</Badge>
     ),
   },
   {
     accessorKey: "priority",
-    header: ({ column }) => (
-      <SortButton column={column}>Priority</SortButton>
-    ),
+    header: "Priority",
     cell: ({ row }) => {
       const priority = row.getValue("priority") as number;
       return (
@@ -59,9 +39,7 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     accessorKey: "status",
-    header: ({ column }) => (
-      <SortButton column={column}>Status</SortButton>
-    ),
+    header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
@@ -79,6 +57,7 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     id: "actions",
+    header: "",
     cell: ({ row, table }) => {
       const meta = table.options.meta as TableMeta;
       return (
