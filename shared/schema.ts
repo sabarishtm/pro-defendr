@@ -19,14 +19,69 @@ export const aiAnalysisSchema = z.object({
 
 export type AIAnalysis = z.infer<typeof aiAnalysisSchema>;
 
+// Role and Permission Types
+export const UserRole = {
+  AGENT: "agent",
+  SR_AGENT: "sr_agent",
+  QUEUE_MANAGER: "queue_manager",
+  ADMIN: "admin",
+} as const;
+
+export const Permission = {
+  REVIEW_CONTENT: "review_content",
+  ASSIGN_CONTENT: "assign_content",
+  MANAGE_USERS: "manage_users",
+  VIEW_REPORTS: "view_reports",
+  MANAGE_SETTINGS: "manage_settings",
+  OVERRIDE_DECISIONS: "override_decisions",
+} as const;
+
+// Role permissions mapping
+export const RolePermissions = {
+  [UserRole.AGENT]: [
+    Permission.REVIEW_CONTENT,
+  ],
+  [UserRole.SR_AGENT]: [
+    Permission.REVIEW_CONTENT,
+    Permission.OVERRIDE_DECISIONS,
+  ],
+  [UserRole.QUEUE_MANAGER]: [
+    Permission.REVIEW_CONTENT,
+    Permission.ASSIGN_CONTENT,
+    Permission.VIEW_REPORTS,
+  ],
+  [UserRole.ADMIN]: [
+    Permission.REVIEW_CONTENT,
+    Permission.ASSIGN_CONTENT,
+    Permission.MANAGE_USERS,
+    Permission.VIEW_REPORTS,
+    Permission.MANAGE_SETTINGS,
+    Permission.OVERRIDE_DECISIONS,
+  ],
+} as const;
+
 // User Types
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  role: text("role").notNull().default("agent"),
+  email: text("email").notNull(),
+  role: text("role", { enum: Object.values(UserRole) }).notNull().default(UserRole.AGENT),
   status: text("status").notNull().default("offline"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  teamId: integer("team_id").references(() => teams.id),
+});
+
+// Team Types
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  managerId: integer("manager_id").references(() => users.id),
 });
 
 // Content Types
@@ -60,7 +115,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
   name: true,
+  email: true,
   role: true,
+  teamId: true,
 });
 
 export const insertContentSchema = createInsertSchema(contentItems)
@@ -83,6 +140,11 @@ export const insertCaseSchema = createInsertSchema(cases).pick({
   notes: true,
   decision: true,
 });
+export const insertTeamSchema = createInsertSchema(teams).pick({
+  name: true,
+  description: true,
+  managerId: true,
+});
 
 // Decision Types
 export const decisionSchema = z.object({
@@ -93,6 +155,13 @@ export const decisionSchema = z.object({
 
 export type Decision = z.infer<typeof decisionSchema>;
 
+
+// Export additional types
+export type UserPermission = typeof Permission[keyof typeof Permission];
+export type UserRoleType = typeof UserRole[keyof typeof UserRole];
+export type RolePermissionsType = typeof RolePermissions;
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
 
 // Export Types
 export type User = typeof users.$inferSelect;

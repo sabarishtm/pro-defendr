@@ -2,13 +2,14 @@ import { Express, Request, Response } from "express";
 import express from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { loginSchema, insertCaseSchema, decisionSchema } from "@shared/schema";
+import { loginSchema, insertCaseSchema, decisionSchema, Permission, UserRole } from "@shared/schema";
 import { analyzeContent } from "./services/ai";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { checkPermission, PermissionError } from "./utils/permissions";
 
 // Extend session type to include userId
 declare module "express-session" {
@@ -307,8 +308,18 @@ export function registerRoutes(app: Express) {
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
+      const user = await storage.getUser(userId);
+      checkPermission(user.role, Permission.REVIEW_CONTENT);
+
       const data = decisionSchema.parse(req.body);
       console.log("Parsed decision data:", data);
+
+      // Additional check for review decisions
+      if (data.decision === "review" && user.role === UserRole.AGENT) {
+        return res.status(403).json({
+          message: "Only Sr. Agents and above can send items for review"
+        });
+      }
 
       // Find or create case
       const cases = await storage.getCases();
@@ -354,6 +365,9 @@ export function registerRoutes(app: Express) {
       console.log("Decision applied successfully:", updatedCase);
       res.json(updatedCase);
     } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
       console.error("Error updating case decision:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       res.status(500).json({
@@ -483,6 +497,80 @@ export function registerRoutes(app: Express) {
     } catch (error) {
       console.error("Error deleting content:", error);
       res.status(500).json({ message: "Error deleting content" });
+    }
+  });
+
+  // Team Management Routes
+  app.get("/api/teams", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const user = await storage.getUser(userId);
+      checkPermission(user.role, Permission.MANAGE_USERS);
+
+      const teams = await storage.getTeams();
+      res.json(teams);
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
+  app.post("/api/teams", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const user = await storage.getUser(userId);
+      checkPermission(user.role, Permission.MANAGE_USERS);
+
+      const team = await storage.createTeam(req.body);
+      res.json(team);
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(400).json({ message: "Failed to create team" });
+    }
+  });
+
+  // User Management Routes
+  app.get("/api/users", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const user = await storage.getUser(userId);
+      checkPermission(user.role, Permission.MANAGE_USERS);
+
+      const users = await storage.getUsers();
+      res.json(users.map(u => ({ ...u, password: undefined })));
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const currentUser = await storage.getUser(userId);
+      checkPermission(currentUser.role, Permission.MANAGE_USERS);
+
+      const newUser = await storage.createUser(req.body);
+      res.json({ ...newUser, password: undefined });
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return res.status(403).json({ message: error.message });
+      }
+      res.status(400).json({ message: "Failed to create user" });
     }
   });
 
