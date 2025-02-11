@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { AIAnalysis } from "@shared/schema";
 
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -8,35 +9,19 @@ const openai = new OpenAI({
 export async function analyzeContent(content: string, type: string): Promise<AIAnalysis> {
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are a content moderation API that MUST ALWAYS respond with valid JSON. Never include explanatory text.
-
-Format your response exactly like this example:
-{
-  "category": "harassment",
-  "confidence": 0.95,
-  "suggestedAction": "reject",
-  "flags": [
-    {
-      "type": "hate_speech",
-      "severity": 8,
-      "details": "Contains explicit hate speech targeting protected group"
-    }
-  ],
-  "risk_score": 0.8
-}
-
-Remember: Only output the JSON object, nothing else. No explanations before or after.`
+          content: `You are a content moderation API. Analyze content and return a JSON object with moderation details.`
         },
         {
           role: "user",
           content: `Analyze this ${type} content for moderation: ${content}`
         }
       ],
-      temperature: 0.1, // Lower temperature for more consistent outputs
+      response_format: { type: "json_object" },
+      temperature: 0.1
     });
 
     const response = completion.choices[0].message.content;
@@ -44,14 +29,7 @@ Remember: Only output the JSON object, nothing else. No explanations before or a
       throw new Error("No response from OpenAI");
     }
 
-    // Try to extract JSON if the response contains any non-JSON text
-    let jsonStr = response;
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[0];
-    }
-
-    const analysis = JSON.parse(jsonStr) as {
+    const analysis = JSON.parse(response) as {
       category: string;
       confidence: number;
       suggestedAction: "approve" | "reject" | "review";
