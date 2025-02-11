@@ -133,7 +133,7 @@ export default function SidebarNav() {
             {/* User Info */}
             <Button
               variant="ghost"
-              className="w-full justify-start h-10 relative"
+              className="w-full justify-start h-10 relative pl-3"
               onClick={() => navigate("/settings")}
             >
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
