@@ -8,60 +8,46 @@ interface TableMeta {
   onOpenModeration?: (item: ContentItem) => void;
 }
 
+const SortButton = ({ column, children }: { column: any; children: React.ReactNode }) => {
+  const sorted = column.getIsSorted();
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(sorted === "asc")}
+      className="-ml-4"
+    >
+      {children}
+      <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-40"}`} />
+    </Button>
+  );
+};
+
 export const columns: ColumnDef<ContentItem>[] = [
   {
     accessorKey: "content",
-    header: ({ column }) => {
-      const sorted = column.getIsSorted();
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(sorted === "asc")}
-          className="hover:bg-muted px-0"
-        >
-          Content
-          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <SortButton column={column}>Content</SortButton>
+    ),
     cell: ({ row }) => (
-      <div className="max-w-[500px] truncate">{row.getValue("content")}</div>
+      <div className="max-w-[400px] truncate">
+        {row.getValue("content")}
+      </div>
     ),
   },
   {
     accessorKey: "type",
-    header: ({ column }) => {
-      const sorted = column.getIsSorted();
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(sorted === "asc")}
-          className="hover:bg-muted px-0"
-        >
-          Type
-          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <SortButton column={column}>Type</SortButton>
+    ),
     cell: ({ row }) => (
       <Badge variant="outline">{row.getValue("type")}</Badge>
     ),
   },
   {
     accessorKey: "priority",
-    header: ({ column }) => {
-      const sorted = column.getIsSorted();
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(sorted === "asc")}
-          className="hover:bg-muted px-0"
-        >
-          Priority
-          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <SortButton column={column}>Priority</SortButton>
+    ),
     cell: ({ row }) => {
       const priority = row.getValue("priority") as number;
       return (
@@ -73,19 +59,9 @@ export const columns: ColumnDef<ContentItem>[] = [
   },
   {
     accessorKey: "status",
-    header: ({ column }) => {
-      const sorted = column.getIsSorted();
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(sorted === "asc")}
-          className="hover:bg-muted px-0"
-        >
-          Status
-          <ArrowUpDown className={`ml-2 h-4 w-4 ${sorted ? "opacity-100" : "opacity-50"}`} />
-        </Button>
-      );
-    },
+    header: ({ column }) => (
+      <SortButton column={column}>Status</SortButton>
+    ),
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
