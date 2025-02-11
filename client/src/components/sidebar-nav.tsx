@@ -43,9 +43,9 @@ export default function SidebarNav() {
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
       .toUpperCase();
   };
 
@@ -53,29 +53,35 @@ export default function SidebarNav() {
     <div
       className={cn(
         "flex flex-col bg-sidebar border-r transition-[width] duration-300 ease-in-out",
-        isExpanded ? "w-64" : "w-16"
+        isExpanded ? "w-64" : "w-16",
       )}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
       {/* Logo Area */}
       <div className="h-16 flex items-center justify-center border-b relative overflow-hidden">
-        <div className={cn(
-          "absolute inset-0 flex items-center transition-transform duration-300 ease-in-out px-4",
-          isExpanded ? "translate-x-0" : "-translate-x-16"
-        )}>
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center transition-transform duration-300 ease-in-out px-4",
+            isExpanded ? "translate-x-0" : "-translate-x-16",
+          )}
+        >
           <Shield className="h-8 w-8 text-primary flex-shrink-0" />
-          <span className={cn(
-            "ml-3 text-xl font-bold transition-opacity duration-300 ease-in-out whitespace-nowrap",
-            isExpanded ? "opacity-100" : "opacity-0"
-          )}>
+          <span
+            className={cn(
+              "ml-3 text-xl font-bold transition-opacity duration-300 ease-in-out whitespace-nowrap",
+              isExpanded ? "opacity-100" : "opacity-0",
+            )}
+          >
             Defendr
           </span>
         </div>
-        <div className={cn(
-          "absolute inset-0 flex items-center justify-center transition-transform duration-300 ease-in-out",
-          isExpanded ? "translate-x-16" : "translate-x-0"
-        )}>
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center transition-transform duration-300 ease-in-out",
+            isExpanded ? "translate-x-16" : "translate-x-0",
+          )}
+        >
           <Shield className="h-8 w-8 text-primary" />
         </div>
       </div>
@@ -91,10 +97,14 @@ export default function SidebarNav() {
               onClick={() => navigate(`/${item.href}`)}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
-              <span className={cn(
-                "ml-3 transition-all duration-300 ease-in-out absolute left-[2.5rem]",
-                isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-              )}>
+              <span
+                className={cn(
+                  "ml-3 transition-all duration-300 ease-in-out absolute left-[2.5rem]",
+                  isExpanded
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-4",
+                )}
+              >
                 {item.name}
               </span>
             </Button>
@@ -108,14 +118,16 @@ export default function SidebarNav() {
           <div className="p-4">
             {/* Sutherland Logo */}
             <div className="flex justify-center mb-4">
-              <div className={cn(
-                "transform transition-all duration-300 ease-in-out origin-center",
-                isExpanded ? "rotate-0" : "-rotate-90"
-              )}>
+              <div
+                className={cn(
+                  "transform transition-all duration-300 ease-in-out origin-center",
+                  isExpanded ? "rotate-0" : "-rotate-90"
+                )}
+              >
                 <img 
                   src="/logo.png" 
                   alt="Sutherland Logo" 
-                  className="h-24 w-24 object-contain"
+                  className="h-48 w-48 object-contain"
                 />
               </div>
             </div>
@@ -125,12 +137,20 @@ export default function SidebarNav() {
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
                 {getInitials(user.name)}
               </div>
-              <div className={cn(
-                "flex flex-col ml-3 transition-all duration-300 ease-in-out absolute left-8",
-                isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-              )}>
-                <span className="text-sm font-medium truncate">{user.name}</span>
-                <span className="text-xs text-muted-foreground capitalize">{user.role?.replace('_', ' ')}</span>
+              <div
+                className={cn(
+                  "flex flex-col ml-3 transition-all duration-300 ease-in-out absolute left-8",
+                  isExpanded
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-4",
+                )}
+              >
+                <span className="text-sm font-medium truncate">
+                  {user.name}
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {user.role?.replace("_", " ")}
+                </span>
               </div>
             </div>
             <Separator className="my-2" />
@@ -140,10 +160,14 @@ export default function SidebarNav() {
               onClick={() => logoutMutation.mutate()}
             >
               <LogOut className="h-5 w-5 flex-shrink-0" />
-              <span className={cn(
-                "ml-3 transition-all duration-300 ease-in-out absolute left-[2.5rem]",
-                isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"
-              )}>
+              <span
+                className={cn(
+                  "ml-3 transition-all duration-300 ease-in-out absolute left-[2.5rem]",
+                  isExpanded
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-4",
+                )}
+              >
                 Logout
               </span>
             </Button>
