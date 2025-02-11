@@ -76,14 +76,6 @@ export default function SidebarNav() {
             Defendr
           </span>
         </div>
-        <div
-          className={cn(
-            "absolute inset-0 flex items-center justify-center transition-transform duration-300 ease-in-out",
-            isExpanded ? "translate-x-16" : "translate-x-0",
-          )}
-        >
-          <Shield className="h-8 w-8 text-primary" />
-        </div>
       </div>
 
       {/* Navigation Area */}
