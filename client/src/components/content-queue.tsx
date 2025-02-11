@@ -41,8 +41,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
+// Update ContentItem type to include assignedUserName
+type ContentItemWithUser = ContentItem & { assignedUserName?: string };
+
 interface QueueProps {
-  onOpenModeration?: (item: ContentItem) => void;
+  onOpenModeration?: (item: ContentItemWithUser) => void;
 }
 
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
@@ -60,7 +63,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: items = [], isLoading } = useQuery<ContentItem[]>({
+  const { data: items = [], isLoading } = useQuery<ContentItemWithUser[]>({
     queryKey: ["/api/content"],
   });
 
@@ -243,6 +246,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
                 <SortableHeader field="status">Status</SortableHeader>
+                <TableHead>Assigned To</TableHead>
                 <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -277,6 +281,15 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                     }>
                       {item.status}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {item.assignedUserName ? (
+                      <Badge variant="outline" className="bg-muted">
+                        {item.assignedUserName}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">Unassigned</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

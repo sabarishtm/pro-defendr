@@ -117,7 +117,7 @@ export function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid content ID" });
       }
 
-      const item = await storage.getContentItem(contentId);
+      const item = await storage.getContentItemWithAssignedUser(contentId);
       if (!item) {
         return res.status(404).json({ message: "Content not found" });
       }
@@ -135,7 +135,7 @@ export function registerRoutes(app: Express) {
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     try {
-      const items = await storage.getContentItems();
+      const items = await storage.getContentItemsWithAssignedUsers();
       console.log("Sending content items:", items);
       res.json(items);
     } catch (error) {

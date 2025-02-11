@@ -27,6 +27,9 @@ export interface IStorage {
   getCase(id: number): Promise<Case | undefined>;
   createCase(caseData: InsertCase): Promise<Case>;
   updateCase(id: number, updates: Partial<Case>): Promise<Case>;
+  // Add new method to get assigned user info
+  getContentItemWithAssignedUser(contentId: number): Promise<ContentItem & { assignedUserName?: string }>;
+  getContentItemsWithAssignedUsers(): Promise<(ContentItem & { assignedUserName?: string })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -128,6 +131,30 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!case_) throw new Error("Case not found");
     return case_;
+  }
+  async getContentItemWithAssignedUser(id: number): Promise<ContentItem & { assignedUserName?: string }> {
+    const [item] = await db.select().from(contentItems).where(eq(contentItems.id, id));
+    if (!item) return item;
+
+    if (item.assignedTo) {
+      const user = await this.getUser(item.assignedTo);
+      return { ...item, assignedUserName: user?.name };
+    }
+    return { ...item, assignedUserName: undefined };
+  }
+
+  async getContentItemsWithAssignedUsers(): Promise<(ContentItem & { assignedUserName?: string })[]> {
+    const items = await db.select().from(contentItems).orderBy(contentItems.priority);
+    const itemsWithUsers = await Promise.all(
+      items.map(async (item) => {
+        if (item.assignedTo) {
+          const user = await this.getUser(item.assignedTo);
+          return { ...item, assignedUserName: user?.name };
+        }
+        return { ...item, assignedUserName: undefined };
+      })
+    );
+    return itemsWithUsers;
   }
 }
 
