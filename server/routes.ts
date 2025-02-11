@@ -429,21 +429,23 @@ export function registerRoutes(app: Express) {
       // Check for existing cases
       const cases = await storage.getCases();
       const contentCases = cases.filter(c => c.contentId === contentId);
-      const pendingCases = contentCases.filter(c => c.decision === null);
+      const pendingCasesFromOthers = contentCases.filter(c => 
+        c.decision === null && c.agentId !== userId
+      );
 
       let errorMessage = "";
 
-      // If there are pending cases without decisions, block deletion
-      if (pendingCases.length > 0) {
-        errorMessage = "Content has pending moderation cases awaiting decision";
+      // If there are pending cases from other moderators, block deletion
+      if (pendingCasesFromOthers.length > 0) {
+        errorMessage = "Content has pending moderation cases from other moderators";
       }
 
-      // If content is being actively moderated, include moderator information
-      if (item.status === "pending" && item.assignedTo) {
+      // If content is being actively moderated by someone else, include moderator information
+      if (item.status === "pending" && item.assignedTo && item.assignedTo !== userId) {
         const moderator = await storage.getUser(item.assignedTo);
         errorMessage = moderator
           ? `Content is currently being moderated by ${moderator.name}`
-          : "Content is currently being moderated";
+          : "Content is currently being moderated by another user";
       }
 
       if (errorMessage) {
