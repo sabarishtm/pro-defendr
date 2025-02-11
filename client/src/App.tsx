@@ -12,31 +12,12 @@ import Settings from "@/pages/settings";
 import ModeratePage from "@/pages/moderate";
 import Users from "@/pages/users";
 import SidebarNav from "@/components/sidebar-nav";
-import UserInfo from "@/components/user-info";
-import { useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  const [isExpanded, setIsExpanded] = useState(true);
-
   return (
     <div className="flex h-screen">
-      <div 
-        className={`${
-          isExpanded ? "w-64" : "w-20"
-        } border-r bg-card flex flex-col transition-all duration-300 ease-in-out relative group`}
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
-      >
-        <div className="flex-1 overflow-hidden">
-          <SidebarNav isExpanded={isExpanded} />
-        </div>
-        <div className="border-t">
-          <UserInfo isExpanded={isExpanded} />
-        </div>
-      </div>
-      <main className={`flex-1 overflow-auto transition-all duration-300 ease-in-out ${
-        isExpanded ? "ml-64" : "ml-20"
-      }`}>
+      <SidebarNav />
+      <main className="flex-1 overflow-auto">
         {children}
       </main>
     </div>
