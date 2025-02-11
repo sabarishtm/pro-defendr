@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import type { ContentItem } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
 import {
   Card,
   CardContent,
@@ -20,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Search, FileText, Image as ImageIcon, Video, Trash2 } from "lucide-react";
+import { Eye, Search, FileText, Image as ImageIcon, Video, Trash2, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -28,6 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,13 +47,21 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 
 // Update ContentItem type to include assignedUserName
 type ContentItemWithUser = ContentItem & { assignedUserName?: string };
 
 interface QueueProps {
   onOpenModeration?: (item: ContentItemWithUser) => void;
+}
+
+interface Filters {
+  type: string;
+  status: string;
+  priority: string;
+  assignedTo: string;
+  dateFrom: Date | null;
+  dateTo: Date | null;
 }
 
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
@@ -58,8 +73,16 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Filter state
-  const [filter, setFilter] = useState("");
+  // Search and filter state
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Filters>({
+    type: "",
+    status: "",
+    priority: "",
+    assignedTo: "",
+    dateFrom: null,
+    dateTo: null,
+  });
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -91,12 +114,29 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     },
   });
 
-  // Filter items based on content or type
-  const filteredItems = items.filter(item =>
-    item.content.toLowerCase().includes(filter.toLowerCase()) ||
-    item.type.toLowerCase().includes(filter.toLowerCase()) ||
-    item.status.toLowerCase().includes(filter.toLowerCase())
-  );
+  // Filter items based on all criteria
+  const filteredItems = items.filter(item => {
+    const matchesSearch = 
+      item.content.toLowerCase().includes(search.toLowerCase()) ||
+      item.type.toLowerCase().includes(search.toLowerCase()) ||
+      item.status.toLowerCase().includes(search.toLowerCase());
+
+    const matchesType = !filters.type || item.type === filters.type;
+    const matchesStatus = !filters.status || item.status === filters.status;
+    const matchesPriority = !filters.priority || 
+      (filters.priority === "high" ? item.priority > 1 : item.priority === 1);
+    const matchesAssignee = !filters.assignedTo || 
+      (filters.assignedTo === "unassigned" ? !item.assignedTo : 
+       item.assignedUserName?.toLowerCase() === filters.assignedTo.toLowerCase());
+
+    const itemDate = new Date(item.createdAt);
+    const matchesDateRange = 
+      (!filters.dateFrom || itemDate >= filters.dateFrom) &&
+      (!filters.dateTo || itemDate <= filters.dateTo);
+
+    return matchesSearch && matchesType && matchesStatus && 
+           matchesPriority && matchesAssignee && matchesDateRange;
+  });
 
   // Sort items
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -107,13 +147,17 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
     const direction = sortDirection === "asc" ? 1 : -1;
 
-    // Special handling for dates
     if (sortField === "createdAt") {
       return (new Date(aValue as string).getTime() - new Date(bValue as string).getTime()) * direction;
     }
 
     return aValue < bValue ? -direction : direction;
   });
+
+  // Get unique values for filters
+  const uniqueTypes = Array.from(new Set(items.map(item => item.type)));
+  const uniqueStatuses = Array.from(new Set(items.map(item => item.status)));
+  const uniqueAssignees = Array.from(new Set(items.filter(item => item.assignedUserName).map(item => item.assignedUserName!)));
 
   // Paginate items
   const totalItems = sortedItems.length;
@@ -130,20 +174,16 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     }
   };
 
-  // Helper function to get display name
   const getDisplayName = (item: ContentItem) => {
     if (item.type === "text") {
-      // For text content, use first 30 chars as title
       return item.content.length > 30
         ? item.content.slice(0, 30) + "..."
         : item.content;
     }
-    // For media content, extract filename from path and remove extension
     const fileName = item.content.split('/').pop() || '';
     return fileName.split('.')[0].replace(/-/g, ' ').slice(0, 30);
   };
 
-  // Helper function to render content thumbnail
   const renderThumbnail = (item: ContentItem) => {
     switch (item.type.toLowerCase()) {
       case 'image':
@@ -178,23 +218,6 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     }
   };
 
-  const SortableHeader = ({ field, children }: { field: keyof ContentItem, children: React.ReactNode }) => (
-    <TableHead>
-      <Button
-        variant="ghost"
-        onClick={() => toggleSort(field)}
-        className="hover:bg-muted px-2 py-1 -ml-2"
-      >
-        {children}
-        {sortField === field && (
-          <span className="ml-2">
-            {sortDirection === "asc" ? "↑" : "↓"}
-          </span>
-        )}
-      </Button>
-    </TableHead>
-  );
-
   if (isLoading) {
     return (
       <Card>
@@ -216,36 +239,164 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               Review and moderate content items ({totalItems} items)
             </CardDescription>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search content..."
-                value={filter}
-                onChange={(e) => {
-                  setFilter(e.target.value);
-                  setPage(1); // Reset to first page on filter
+          <div className="flex flex-col space-y-4">
+            {/* Search and filters */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 flex-1">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search content..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-[300px]"
+                />
+              </div>
+              <Select
+                value={filters.type}
+                onValueChange={(value) => {
+                  setFilters(prev => ({ ...prev, type: value }));
+                  setPage(1);
                 }}
-                className="w-[300px]"
-              />
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Content Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Types</SelectItem>
+                  {uniqueTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.status}
+                onValueChange={(value) => {
+                  setFilters(prev => ({ ...prev, status: value }));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Statuses</SelectItem>
+                  {uniqueStatuses.map(status => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.priority}
+                onValueChange={(value) => {
+                  setFilters(prev => ({ ...prev, priority: value }));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Priorities</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.assignedTo}
+                onValueChange={(value) => {
+                  setFilters(prev => ({ ...prev, assignedTo: value }));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Assigned To" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Assignees</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {uniqueAssignees.map(name => (
+                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => {
-                setPageSize(Number(value));
-                setPage(1); // Reset to first page on size change
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select page size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="20">20 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Date range filters */}
+            <div className="flex items-center space-x-4">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[150px]">
+                    {filters.dateFrom ? format(filters.dateFrom, "PP") : "From Date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dateFrom}
+                    onSelect={(date) => {
+                      setFilters(prev => ({ ...prev, dateFrom: date }));
+                      setPage(1);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[150px]">
+                    {filters.dateTo ? format(filters.dateTo, "PP") : "To Date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dateTo}
+                    onSelect={(date) => {
+                      setFilters(prev => ({ ...prev, dateTo: date }));
+                      setPage(1);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilters({
+                    type: "",
+                    status: "",
+                    priority: "",
+                    assignedTo: "",
+                    dateFrom: null,
+                    dateTo: null,
+                  });
+                  setPage(1);
+                }}
+              >
+                Clear Filters
+              </Button>
+              <div className="flex-1 flex justify-end">
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select page size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -256,10 +407,18 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               <TableRow>
                 <TableHead className="w-[140px]">Preview</TableHead>
                 <TableHead>Title</TableHead>
-                <SortableHeader field="type">Type</SortableHeader>
-                <SortableHeader field="priority">Priority</SortableHeader>
-                <SortableHeader field="status">Status</SortableHeader>
-                <SortableHeader field="createdAt">Created At</SortableHeader>
+                <TableHead onClick={() => toggleSort("type")} className="cursor-pointer">
+                  Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer">
+                  Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("status")} className="cursor-pointer">
+                  Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer">
+                  Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
                 <TableHead>Assigned To</TableHead>
                 <TableHead className="w-[120px]">Actions</TableHead>
               </TableRow>
