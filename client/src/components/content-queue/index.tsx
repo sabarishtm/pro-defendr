@@ -23,30 +23,17 @@ export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
     queryKey: ["/api/content"],
     queryFn: async () => {
       try {
-        const response = await apiRequest("GET", "/api/content");
-        if (response instanceof Response) {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const data = await response.json();
-          console.log("Content API response data:", data);
-          if (!Array.isArray(data)) {
-            console.error("Invalid response format, expected array:", data);
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Failed to load content items. Invalid data format.",
-            });
-            return [];
-          }
-          return data;
+        const data = await apiRequest("GET", "/api/content");
+        if (!Array.isArray(data)) {
+          console.error("Invalid response format, expected array:", data);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load content items. Invalid data format.",
+          });
+          return [];
         }
-        // If response is already parsed JSON
-        if (Array.isArray(response)) {
-          return response;
-        }
-        console.error("Unexpected response format:", response);
-        return [];
+        return data;
       } catch (error) {
         console.error("Error fetching content:", error);
         toast({
