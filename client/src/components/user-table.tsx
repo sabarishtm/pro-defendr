@@ -28,12 +28,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil } from "lucide-react";
+import { Pencil, Key } from "lucide-react";
 
 export function UserTable() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -46,6 +48,8 @@ export function UserTable() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setEditingUser(null);
+      setShowPasswordDialog(false);
+      setNewPassword("");
       toast({
         title: "Success",
         description: "User updated successfully",
@@ -62,6 +66,22 @@ export function UserTable() {
 
   const handleRoleChange = async (userId: number, newRole: string) => {
     updateUserMutation.mutate({ id: userId, updates: { role: newRole } });
+  };
+
+  const handlePasswordUpdate = (userId: number) => {
+    if (!newPassword.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Password cannot be empty",
+      });
+      return;
+    }
+
+    updateUserMutation.mutate({
+      id: userId,
+      updates: { password: newPassword },
+    });
   };
 
   return (
@@ -102,74 +122,124 @@ export function UserTable() {
               </TableCell>
               <TableCell>{user.status}</TableCell>
               <TableCell>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingUser(user)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  {editingUser && (
+                <div className="flex space-x-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingUser(user)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    {editingUser && (
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Edit User</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
+                              id="name"
+                              defaultValue={editingUser.name}
+                              onChange={(e) =>
+                                setEditingUser({
+                                  ...editingUser,
+                                  name: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              type="email"
+                              defaultValue={editingUser.email}
+                              onChange={(e) =>
+                                setEditingUser({
+                                  ...editingUser,
+                                  email: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setEditingUser(null)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={() =>
+                              updateUserMutation.mutate({
+                                id: editingUser.id,
+                                updates: {
+                                  name: editingUser.name,
+                                  email: editingUser.email,
+                                },
+                              })
+                            }
+                          >
+                            Save Changes
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    )}
+                  </Dialog>
+
+                  <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditingUser(user);
+                          setNewPassword("");
+                        }}
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
-                        <DialogTitle>Edit User</DialogTitle>
+                        <DialogTitle>Change Password</DialogTitle>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                          <Label htmlFor="name">Name</Label>
+                          <Label htmlFor="newPassword">New Password</Label>
                           <Input
-                            id="name"
-                            defaultValue={editingUser.name}
-                            onChange={(e) =>
-                              setEditingUser({
-                                ...editingUser,
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            defaultValue={editingUser.email}
-                            onChange={(e) =>
-                              setEditingUser({
-                                ...editingUser,
-                                email: e.target.value,
-                              })
-                            }
+                            id="newPassword"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
                           />
                         </div>
                       </div>
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="outline"
-                          onClick={() => setEditingUser(null)}
+                          onClick={() => {
+                            setShowPasswordDialog(false);
+                            setNewPassword("");
+                          }}
                         >
                           Cancel
                         </Button>
                         <Button
-                          onClick={() =>
-                            updateUserMutation.mutate({
-                              id: editingUser.id,
-                              updates: {
-                                name: editingUser.name,
-                                email: editingUser.email,
-                              },
-                            })
-                          }
+                          onClick={() => handlePasswordUpdate(user.id)}
+                          disabled={!newPassword.trim()}
                         >
-                          Save Changes
+                          Update Password
                         </Button>
                       </div>
                     </DialogContent>
-                  )}
-                </Dialog>
+                  </Dialog>
+                </div>
               </TableCell>
             </TableRow>
           ))}
