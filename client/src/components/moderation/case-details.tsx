@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
+import { Slider } from "@/components/ui/slider";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
@@ -33,16 +34,13 @@ export function CaseDetails({
   async function handleDecision(decision: "approve" | "reject") {
     try {
       setIsSubmitting(true);
-      console.log("Recording decision:", { contentId: contentItem.id, decision, notes });
 
-      // First create/update the case with the decision
       await apiRequest("PATCH", "/api/cases/decision", {
         contentId: contentItem.id,
         decision,
         notes
       });
 
-      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/content"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
       queryClient.invalidateQueries({ queryKey: ["/api/content", contentItem.id] });
@@ -80,7 +78,7 @@ export function CaseDetails({
               <FileText className="h-5 w-5 text-muted-foreground" />
               <span className="text-base font-medium">Text Content</span>
             </div>
-            <div className="p-6 bg-card border rounded-lg shadow-sm">
+            <div className="p-6 bg-background border rounded-lg shadow-sm">
               <p className="whitespace-pre-wrap text-lg leading-relaxed">
                 {contentItem.content}
               </p>
@@ -103,11 +101,11 @@ export function CaseDetails({
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-card border rounded-lg shadow-sm">
+              <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
                 <img 
                   src={contentItem.content} 
                   alt="Content for review"
-                  className="w-full max-h-[400px] object-contain rounded-md"
+                  className="w-full max-h-[500px] object-contain"
                   onError={() => setMediaError(true)}
                 />
               </div>
@@ -130,11 +128,11 @@ export function CaseDetails({
                 </div>
               </div>
             ) : (
-              <div className="p-4 bg-card border rounded-lg shadow-sm">
+              <div className="bg-background border rounded-lg shadow-sm overflow-hidden">
                 <video
                   src={contentItem.content}
                   controls
-                  className="w-full max-h-[400px] rounded-md"
+                  className="w-full max-h-[500px]"
                   onError={() => setMediaError(true)}
                 >
                   Your browser does not support the video tag.
@@ -151,7 +149,7 @@ export function CaseDetails({
               <AlertTriangle className="h-5 w-5 text-muted-foreground" />
               <span className="text-base font-medium">Unknown Content Type</span>
             </div>
-            <div className="p-6 bg-card border rounded-lg shadow-sm">
+            <div className="p-6 bg-background border rounded-lg shadow-sm">
               <p className="text-sm text-muted-foreground mb-2">
                 Content type not supported: {type}
               </p>
@@ -165,119 +163,137 @@ export function CaseDetails({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Review Content</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-8">
-        {contentItem.priority > 2 && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              This content has been flagged as high priority
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-6">
-          {renderContent()}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Content Review</h1>
+          <p className="text-sm text-muted-foreground">ID: {contentItem.id}</p>
         </div>
+        <Button variant="outline" onClick={handleCancel}>
+          <X className="h-4 w-4 mr-2" />
+          Close
+        </Button>
+      </div>
 
-        {contentItem.metadata?.aiAnalysis && (
-          <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border/50">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Brain className="h-4 w-4" />
-              <h3 className="text-sm font-medium">AI Analysis</h3>
-            </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Content Sensitivity</span>
+          <span className="text-sm text-muted-foreground">
+            {contentItem.priority === 1 ? "Low" : "High"}
+          </span>
+        </div>
+        <Slider
+          value={[contentItem.priority]}
+          max={2}
+          min={1}
+          step={1}
+          disabled
+          className="w-full"
+        />
+      </div>
 
-            <div className="grid gap-3">
-              {contentItem.metadata.aiAnalysis.classification && (
-                <>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Suggested Action:</span>
-                    <Badge variant={
-                      contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve" 
-                        ? "default"  
-                        : contentItem.metadata.aiAnalysis.classification.suggestedAction === "reject"
-                        ? "destructive"
-                        : "secondary"  
-                    }>
-                      {contentItem.metadata.aiAnalysis.classification.suggestedAction}
-                    </Badge>
-                  </div>
+      {contentItem.metadata?.aiAnalysis?.contentFlags?.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Content Warnings</h3>
+          <div className="flex flex-wrap gap-2">
+            {contentItem.metadata.aiAnalysis.contentFlags.map((flag, index) => (
+              <Badge key={index} variant="destructive" className="text-xs">
+                {flag.type} (Severity: {flag.severity})
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
 
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Confidence</span>
-                      <span className="text-muted-foreground">
-                        {Math.round(contentItem.metadata.aiAnalysis.classification.confidence * 100)}%
-                      </span>
+      <Card>
+        <CardContent className="p-6 space-y-8">
+          {contentItem.priority > 2 && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                This content has been flagged as high priority
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-6">
+            {renderContent()}
+          </div>
+
+          {contentItem.metadata?.aiAnalysis && (
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border border-border/50">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Brain className="h-4 w-4" />
+                <h3 className="text-sm font-medium">AI Analysis</h3>
+              </div>
+
+              <div className="grid gap-3">
+                {contentItem.metadata.aiAnalysis.classification && (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Suggested Action:</span>
+                      <Badge variant={
+                        contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve" 
+                          ? "default"  
+                          : contentItem.metadata.aiAnalysis.classification.suggestedAction === "reject"
+                          ? "destructive"
+                          : "secondary"  
+                      }>
+                        {contentItem.metadata.aiAnalysis.classification.suggestedAction}
+                      </Badge>
                     </div>
-                    <Progress 
-                      value={contentItem.metadata.aiAnalysis.classification.confidence * 100}
-                      className="h-1.5"
-                    />
-                  </div>
-                </>
-              )}
 
-              {contentItem.metadata.aiAnalysis.contentFlags?.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-sm text-muted-foreground">Flags:</span>
-                  <div className="space-y-1">
-                    {contentItem.metadata.aiAnalysis.contentFlags.map((flag, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{flag.type}</span>
-                        <Badge variant="outline" className="text-xs">
-                          Severity: {flag.severity}
-                        </Badge>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Confidence</span>
+                        <span className="text-muted-foreground">
+                          {Math.round(contentItem.metadata.aiAnalysis.classification.confidence * 100)}%
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      <Progress 
+                        value={contentItem.metadata.aiAnalysis.classification.confidence * 100}
+                        className="h-1.5"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4 pt-4 border-t">
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add notes about your decision..."
+              className="min-h-[100px]"
+            />
+
+            <div className="flex gap-4">
+              <Button
+                size="lg"
+                variant="outline"
+                className="flex-1"
+                onClick={() => handleDecision("approve")}
+                disabled={isSubmitting}
+              >
+                <ThumbsUp className="mr-2 h-4 w-4" />
+                Approve
+              </Button>
+              <Button
+                size="lg"
+                variant="destructive"
+                className="flex-1"
+                onClick={() => handleDecision("reject")}
+                disabled={isSubmitting}
+              >
+                <ThumbsDown className="mr-2 h-4 w-4" />
+                Reject
+              </Button>
             </div>
           </div>
-        )}
-
-        <div className="space-y-4 pt-4 border-t">
-          <Textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add notes about your decision..."
-            className="min-h-[100px]"
-          />
-
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => handleDecision("approve")}
-              disabled={isSubmitting}
-            >
-              <ThumbsUp className="mr-2 h-4 w-4" />
-              Approve
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onClick={() => handleDecision("reject")}
-              disabled={isSubmitting}
-            >
-              <ThumbsDown className="mr-2 h-4 w-4" />
-              Reject
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
