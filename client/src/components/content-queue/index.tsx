@@ -11,26 +11,51 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentQueueProps {
   onOpenModeration?: (item: ContentItem) => void;
 }
 
 export default function ContentQueue({ onOpenModeration }: ContentQueueProps) {
+  const { toast } = useToast();
   const { data: items = [], isLoading } = useQuery<ContentItem[]>({
     queryKey: ["/api/content"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/content");
-      if (response instanceof Response) {
-        const data = await response.json();
-        console.log("Parsed API Response:", data);
-        if (!Array.isArray(data)) {
-          console.error("Invalid response format:", data);
-          return [];
+      try {
+        const response = await apiRequest("GET", "/api/content");
+        if (response instanceof Response) {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          console.log("Content API response data:", data);
+          if (!Array.isArray(data)) {
+            console.error("Invalid response format, expected array:", data);
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to load content items. Invalid data format.",
+            });
+            return [];
+          }
+          return data;
         }
-        return data;
+        // If response is already parsed JSON
+        if (Array.isArray(response)) {
+          return response;
+        }
+        console.error("Unexpected response format:", response);
+        return [];
+      } catch (error) {
+        console.error("Error fetching content:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load content items. Please try again.",
+        });
+        return [];
       }
-      return response; // If it's already parsed JSON
     }
   });
 
