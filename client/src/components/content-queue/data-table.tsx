@@ -51,6 +51,9 @@ export function DataTable<TData>({
     data,
     columns,
     enableSorting: true,
+    enableFiltering: true,
+    enableColumnFilters: true,
+    enableGlobalFilter: true,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -66,10 +69,6 @@ export function DataTable<TData>({
       columnVisibility,
       rowSelection,
       globalFilter,
-      pagination: {
-        pageSize: 10,
-        pageIndex: 0,
-      },
     },
     meta: {
       onOpenModeration,
@@ -122,21 +121,16 @@ export function DataTable<TData>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      className="whitespace-nowrap"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>

@@ -11,7 +11,17 @@ interface TableMeta {
 export const columns: ColumnDef<ContentItem>[] = [
   {
     accessorKey: "content",
-    header: "Content",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Content
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const content = row.getValue("content") as string;
       return (
@@ -20,18 +30,40 @@ export const columns: ColumnDef<ContentItem>[] = [
         </div>
       );
     },
+    sortingFn: "text"
   },
   {
     accessorKey: "type",
-    header: "Type",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Type
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const type = row.getValue("type") as string;
       return <Badge variant="outline">{type}</Badge>;
     },
+    sortingFn: "text"
   },
   {
     accessorKey: "priority",
-    header: "Priority",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Priority
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const priority = row.getValue("priority") as number;
       return (
@@ -40,10 +72,21 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
+    sortingFn: "number"
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
@@ -58,6 +101,7 @@ export const columns: ColumnDef<ContentItem>[] = [
         </Badge>
       );
     },
+    sortingFn: "text"
   },
   {
     id: "actions",
