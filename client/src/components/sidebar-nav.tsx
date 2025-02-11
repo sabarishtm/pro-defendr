@@ -132,29 +132,25 @@ export default function SidebarNav() {
             <Separator className="my-2" />
             {/* User Info */}
             <Button
-              variant="link"
-              className="p-0 h-auto w-full hover:no-underline"
+              variant="ghost"
+              className="w-full justify-start h-10 relative overflow-hidden"
               onClick={() => navigate("/settings")}
             >
-              <div className="flex items-center relative h-8 overflow-hidden">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
-                  {getInitials(user.name)}
-                </div>
-                <div
-                  className={cn(
-                    "flex flex-col ml-3 transition-all duration-300 ease-in-out absolute left-8",
-                    isExpanded
-                      ? "opacity-100 translate-x-0"
-                      : "opacity-0 -translate-x-4",
-                  )}
-                >
-                  <span className="text-sm font-medium truncate text-left">
-                    {user.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground capitalize text-left">
-                    {user.role?.replace("_", " ")}
-                  </span>
-                </div>
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium flex-shrink-0">
+                {getInitials(user.name)}
+              </div>
+              <div
+                className={cn(
+                  "ml-3 flex flex-col items-start transition-all duration-300 ease-in-out absolute left-[2.5rem]",
+                  isExpanded
+                    ? "opacity-100 translate-x-0"
+                    : "opacity-0 -translate-x-4",
+                )}
+              >
+                <span className="text-sm font-medium">{user.name}</span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {user.role?.replace("_", " ")}
+                </span>
               </div>
             </Button>
             <Separator className="my-2" />
