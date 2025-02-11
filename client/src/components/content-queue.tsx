@@ -42,7 +42,16 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
   const { toast } = useToast();
 
   const { data: items = [], isLoading } = useQuery<ContentItem[]>({
-    queryKey: ["/api/content", page, pageSize, sortField, sortOrder],
+    queryKey: ["/api/content", { page, pageSize, sortField, sortOrder }],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        sortField,
+        sortOrder
+      });
+      return apiRequest("GET", `/api/content?${queryParams}`);
+    }
   });
 
   const totalItems = items.length;
