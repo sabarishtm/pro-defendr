@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +28,7 @@ export function CaseDetails({
   const [mediaError, setMediaError] = useState(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   async function handleDecision(decision: "approve" | "reject") {
     try {
@@ -39,6 +41,11 @@ export function CaseDetails({
         decision,
         notes
       });
+
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cases"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/content", contentItem.id] });
 
       toast({
         title: "Decision recorded",
