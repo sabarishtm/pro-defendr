@@ -12,11 +12,19 @@ import Settings from "@/pages/settings";
 import ModeratePage from "@/pages/moderate";
 import Users from "@/pages/users";
 import SidebarNav from "@/components/sidebar-nav";
+import UserInfo from "@/components/user-info";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
-      <SidebarNav />
+      <div className="w-64 border-r bg-card">
+        <div className="flex flex-col h-full">
+          <div className="border-b">
+            <UserInfo />
+          </div>
+          <SidebarNav />
+        </div>
+      </div>
       <main className="flex-1 overflow-auto">
         {children}
       </main>
