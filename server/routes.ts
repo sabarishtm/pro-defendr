@@ -303,13 +303,13 @@ export function registerRoutes(app: Express) {
       // Check for existing cases
       const cases = await storage.getCases();
       const contentCases = cases.filter(c => c.contentId === contentId);
-      const openCases = contentCases.filter(c => c.status === "open");
+      const pendingCases = contentCases.filter(c => c.decision === null);
 
       let errorMessage = "";
 
-      // If there are open cases, include case information
-      if (openCases.length > 0) {
-        errorMessage = "Content has open moderation cases";
+      // If there are pending cases without decisions, block deletion
+      if (pendingCases.length > 0) {
+        errorMessage = "Content has pending moderation cases awaiting decision";
       }
 
       // If content is being actively moderated, include moderator information
