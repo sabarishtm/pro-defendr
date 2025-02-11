@@ -132,10 +132,15 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   // Helper function to get display name
   const getDisplayName = (item: ContentItem) => {
-    if (item.type === "text") return item.content.slice(0, 15);
-    // For media content, extract filename from path
+    if (item.type === "text") {
+      // For text content, use first 30 chars as title
+      return item.content.length > 30
+        ? item.content.slice(0, 30) + "..."
+        : item.content;
+    }
+    // For media content, extract filename from path and remove extension
     const fileName = item.content.split('/').pop() || '';
-    return fileName.split('.')[0].slice(0, 15);
+    return fileName.split('.')[0].replace(/-/g, ' ').slice(0, 30);
   };
 
   // Helper function to render content thumbnail
@@ -250,7 +255,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[140px]">Preview</TableHead>
-                <TableHead>Content</TableHead>
+                <TableHead>Title</TableHead>
                 <SortableHeader field="type">Type</SortableHeader>
                 <SortableHeader field="priority">Priority</SortableHeader>
                 <SortableHeader field="status">Status</SortableHeader>
@@ -269,7 +274,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   <TableCell className="p-2">
                     {renderThumbnail(item)}
                   </TableCell>
-                  <TableCell className="max-w-[400px] truncate">
+                  <TableCell className="max-w-[400px] truncate font-medium">
                     {getDisplayName(item)}
                   </TableCell>
                   <TableCell>
