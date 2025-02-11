@@ -293,7 +293,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  app.patch("/api/cases/:id/decision", async (req: Request, res: Response) => {
+  app.patch("/api/cases/decision", async (req: Request, res: Response) => {
     try {
       const userId = req.session.userId;
       if (!userId) return res.status(401).json({ message: "Unauthorized" });

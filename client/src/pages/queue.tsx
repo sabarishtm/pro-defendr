@@ -78,6 +78,30 @@ export default function Queue() {
     }
   };
 
+  const decisionMutation = useMutation({
+    mutationFn: async ({ contentId, decision, notes }: { contentId: number; decision: string; notes?: string }) => {
+      return await apiRequest("PATCH", "/api/cases/decision", {
+        contentId,
+        decision,
+        notes,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/content"] });
+      toast({
+        title: "Decision Recorded",
+        description: "Your moderation decision has been saved.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to record decision. Please try again.",
+      });
+    },
+  });
+
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
@@ -100,7 +124,7 @@ export default function Queue() {
                 <CardTitle>Add Text Content</CardTitle>
               </CardHeader>
               <CardContent>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     uploadMutation.mutate(newContent);
@@ -112,7 +136,9 @@ export default function Queue() {
                     <Input
                       id="contentName"
                       value={contentName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContentName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setContentName(e.target.value)
+                      }
                       placeholder="Enter a name for this content"
                       maxLength={50}
                     />
@@ -127,8 +153,8 @@ export default function Queue() {
                       className="min-h-[100px]"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={uploadMutation.isPending || !newContent.trim()}
                   >
                     {uploadMutation.isPending ? "Uploading..." : "Upload Content"}
