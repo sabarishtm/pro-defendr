@@ -63,7 +63,7 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
         </Button>
         <div 
           ref={scrollContainerRef}
-          className="flex gap-2 overflow-x-auto px-8 py-2 scrollbar-hide"
+          className="flex gap-2 overflow-x-auto px-8 py-2 scrollbar-hide relative"
           style={{ 
             scrollbarWidth: 'none',
             msOverflowStyle: 'none'
@@ -107,13 +107,18 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                         "border border-border"}
                     `}
                   >
-                    {point.thumbnail ? (
+                    {point.thumbnail && (
                       <img 
                         src={point.thumbnail}
                         alt={`Timeline thumbnail at ${point.time}s`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error("Failed to load thumbnail:", point.thumbnail);
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
-                    ) : (
+                    )}
+                    {!point.thumbnail && (
                       <div 
                         className="w-full h-full"
                         style={{
