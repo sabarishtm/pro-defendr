@@ -134,11 +134,12 @@ export class ModerationService {
 
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
-      console.log("Making API request to TheHive for media moderation with URL:", filePath);
-
       // The file should already be in the uploads directory and accessible via the /uploads path
       const fileName = path.basename(filePath);
-      const publicUrl = `${process.env.REPLIT_URL || 'http://localhost:5000'}/uploads/${fileName}`;
+
+      // Construct the publicly accessible URL using Replit's environment variables
+      const replicoUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+      const publicUrl = `${replicoUrl}/uploads/${fileName}`;
 
       console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
 
