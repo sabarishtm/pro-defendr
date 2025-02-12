@@ -137,8 +137,8 @@ export class ModerationService {
       // Get the filename from the path
       const fileName = path.basename(filePath);
 
-      // Construct the publicly accessible URL for the file
-      const publicUrl = `${process.env.REPL_WEBVIEW_URL}/uploads/${fileName}`;
+      // Construct the publicly accessible URL for the file using replit.dev domain
+      const publicUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_ID}.repl.dev/uploads/${fileName}`;
 
       console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
       const response = await axios.post(
