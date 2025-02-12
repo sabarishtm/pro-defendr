@@ -187,9 +187,14 @@ export class ModerationService {
         firstOutputClasses: response.data.status?.[0]?.response?.output?.[0]?.classes?.length
       });
 
-      // Process response data
       const result = response.data.status[0].response;
       const scores: Record<string, number> = {};
+      console.log("Processing moderation response:", {
+        hasTimeline: !!result.timeline,
+        timelineLength: result.timeline?.length,
+        outputLength: result.output?.length,
+        firstOutput: result.output?.[0]
+      });
 
       // Process scores from response
       if (result.output && result.output[0] && result.output[0].classes) {
@@ -208,6 +213,7 @@ export class ModerationService {
 
       // Log final processed scores
       console.log("Final processed confidence scores:", scores);
+      console.log("Timeline data being returned:", result.timeline);
 
       // Determine status based on scores
       const maxScore = Math.max(0, ...Object.values(scores));

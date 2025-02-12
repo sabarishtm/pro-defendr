@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Card } from "./ui/card";
 import { VideoOutput } from "@shared/schema";
 import { motion } from "framer-motion";
@@ -14,6 +14,19 @@ interface VideoTimelineProps {
 export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    console.log("VideoTimeline mounted with:", {
+      hasTimeline: Boolean(timeline),
+      timelineLength: timeline?.length,
+      hasVideoRef: Boolean(videoRef.current),
+      videoSrc: videoRef.current?.src
+    });
+
+    if (timeline?.length) {
+      console.log("Timeline data sample:", timeline[0]);
+    }
+  }, [timeline, videoRef]);
+
   const scroll = (direction: "left" | "right") => {
     if (!scrollContainerRef.current) return;
     const scrollAmount = 200;
@@ -23,6 +36,18 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
       behavior: "smooth"
     });
   };
+
+  if (!timeline?.length) {
+    console.log("No timeline data available");
+    return null;
+  }
+
+  if (!videoRef.current) {
+    console.log("No video reference available");
+    return null;
+  }
+
+  console.log("Rendering timeline with", timeline.length, "points");
 
   return (
     <Card className="p-4 mt-4">
@@ -41,8 +66,7 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
           className="flex gap-2 overflow-x-auto px-8 py-2 scrollbar-hide"
           style={{ 
             scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            '&::-webkit-scrollbar': { display: 'none' }
+            msOverflowStyle: 'none'
           }}
         >
           {timeline.map((point, index) => {
@@ -50,12 +74,23 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
             const maxConfidence = Math.max(...Object.values(point.confidence));
             const severity = maxConfidence > 0.8 ? "high" : maxConfidence > 0.4 ? "medium" : "low";
 
+            console.log(`Rendering thumbnail ${index}:`, {
+              time: point.time,
+              flagTypes,
+              maxConfidence,
+              severity
+            });
+
             return (
               <motion.div
                 key={index}
                 className="flex-shrink-0 cursor-pointer"
                 whileHover={{ scale: 1.05 }}
                 onClick={() => {
+                  console.log("Thumbnail clicked:", {
+                    index,
+                    time: point.time
+                  });
                   if (videoRef.current) {
                     videoRef.current.currentTime = point.time;
                     onTimeSelect(point.time);

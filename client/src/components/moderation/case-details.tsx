@@ -21,10 +21,10 @@ interface CaseDetailsProps {
   onComplete: () => void;
 }
 
-export function CaseDetails({ 
-  contentItem, 
+export function CaseDetails({
+  contentItem,
   moderationCase,
-  onComplete 
+  onComplete
 }: CaseDetailsProps) {
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,8 +115,8 @@ export function CaseDetails({
             ) : (
               <>
                 <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
-                  <img 
-                    src={contentItem.content} 
+                  <img
+                    src={contentItem.content}
                     alt="Content for review"
                     className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
                     style={getBlurStyle()}
@@ -165,6 +165,12 @@ export function CaseDetails({
         );
 
       case "video":
+        console.log("Rendering video content:", {
+          hasMetadata: !!contentItem.metadata,
+          hasAiAnalysis: !!contentItem.metadata.aiAnalysis,
+          hasTimeline: !!contentItem.metadata.aiAnalysis?.timeline,
+          timelineLength: contentItem.metadata.aiAnalysis?.timeline?.length
+        });
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -188,6 +194,10 @@ export function CaseDetails({
                     className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
                     style={getBlurStyle()}
                     onError={() => setMediaError(true)}
+                    onLoadedMetadata={() => console.log("Video loaded:", {
+                      duration: videoRef.current?.duration,
+                      src: videoRef.current?.src
+                    })}
                   >
                     Your browser does not support the video tag.
                   </video>
@@ -196,7 +206,10 @@ export function CaseDetails({
                   <VideoTimeline
                     timeline={contentItem.metadata.aiAnalysis.timeline}
                     videoRef={videoRef}
-                    onTimeSelect={setSelectedTime}
+                    onTimeSelect={(time) => {
+                      console.log("Time selected:", time);
+                      setSelectedTime(time);
+                    }}
                   />
                 )}
                 {selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
@@ -320,11 +333,11 @@ export function CaseDetails({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Suggested Action:</span>
                       <Badge variant={
-                        contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve" 
-                          ? "default"  
+                        contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve"
+                          ? "default"
                           : contentItem.metadata.aiAnalysis.classification.suggestedAction === "reject"
-                          ? "destructive"
-                          : "secondary"  
+                            ? "destructive"
+                            : "secondary"
                       }>
                         {contentItem.metadata.aiAnalysis.classification.suggestedAction}
                       </Badge>
@@ -337,7 +350,7 @@ export function CaseDetails({
                           {Math.round(contentItem.metadata.aiAnalysis.classification.confidence * 100)}%
                         </span>
                       </div>
-                      <Progress 
+                      <Progress
                         value={contentItem.metadata.aiAnalysis.classification.confidence * 100}
                         className="h-1.5"
                       />
