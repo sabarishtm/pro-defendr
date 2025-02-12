@@ -22,11 +22,23 @@ if (!fs.existsSync(thumbnailsDir)) {
   log("Created thumbnails directory");
 }
 
-// Configure static file serving for uploads and public directories
+// Configure static file serving for uploads and thumbnails directories
 app.use('/uploads', (req, res, next) => {
   log(`Serving static file from uploads: ${req.url}`);
   next();
-}, express.static(uploadsDir));
+}, express.static(uploadsDir, {
+  index: false,
+  extensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm'],
+}));
+
+// Serve thumbnails directory separately to ensure proper resolution
+app.use('/uploads/thumbnails', (req, res, next) => {
+  log(`Serving thumbnail: ${req.url}`);
+  next();
+}, express.static(thumbnailsDir, {
+  index: false,
+  extensions: ['jpg', 'jpeg', 'png'],
+}));
 
 app.use(express.static(path.join(process.cwd(), 'public')));
 
