@@ -134,24 +134,58 @@ export class ModerationService {
 
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
+      // Log current working directory
+      console.log("Current working directory:", process.cwd());
+
       // Get the filename from the path
       const fileName = path.basename(filePath);
+      console.log("File name extracted:", fileName);
+
+      // Log URL construction process
+      console.log("URL Construction:", {
+        repl_id: process.env.REPL_ID,
+        repl_slug: process.env.REPL_SLUG,
+        repl_owner: process.env.REPL_OWNER,
+        webview_url: process.env.REPL_WEBVIEW_URL,
+        file_path: filePath
+      });
 
       // Ensure we have a valid base URL by using the Riker URL format
       const baseUrl = 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev';
       const publicUrl = `${baseUrl}/uploads/${fileName}`;
+      console.log("Constructed public URL:", publicUrl);
 
-      console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
+      // Log the complete request configuration
+      const requestConfig = {
+        url: 'https://api.thehive.ai/api/v2/task/sync',
+        method: 'post',
+        headers: {
+          'accept': 'application/json',
+          'authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
+        },
+        data: { url: publicUrl }
+      };
+      console.log("Making API request to TheHive with config:", JSON.stringify(requestConfig, null, 2));
+
       const response = await axios.post(
-        'https://api.thehive.ai/api/v2/task/sync',
-        { url: publicUrl },
+        requestConfig.url,
+        requestConfig.data,
         {
-          headers: {
-            'accept': 'application/json',
-            'authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
-          }
+          headers: requestConfig.headers
         }
       );
+
+      // Log the complete API response
+      console.log("Complete TheHive API Response:", JSON.stringify(response.data, null, 2));
+      console.log("API Response structure:", {
+        hasStatus: !!response.data.status,
+        responseLength: response.data.status?.length,
+        firstResponseStatus: response.data.status?.[0]?.status,
+        hasTimeline: !!response.data.status?.[0]?.response?.timeline,
+        timelineLength: response.data.status?.[0]?.response?.timeline?.length,
+        outputLength: response.data.status?.[0]?.response?.output?.length,
+        firstOutputClasses: response.data.status?.[0]?.response?.output?.[0]?.classes?.length
+      });
 
       // Process response data
       const result = response.data.status[0].response;
@@ -171,6 +205,9 @@ export class ModerationService {
           }
         });
       }
+
+      // Log final processed scores
+      console.log("Final processed confidence scores:", scores);
 
       // Determine status based on scores
       const maxScore = Math.max(0, ...Object.values(scores));
@@ -198,6 +235,15 @@ export class ModerationService {
       console.error("TheHive API error:", error);
       if (axios.isAxiosError(error)) {
         console.error("API Response:", error.response?.data);
+        console.error("Request Config:", {
+          url: error.config?.url,
+          headers: {
+            ...error.config?.headers,
+            'Authorization': 'token [REDACTED]' // Log sanitized version
+          },
+          method: error.config?.method,
+          data: error.config?.data
+        });
       }
       return {
         status: "flagged",
