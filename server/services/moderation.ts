@@ -138,8 +138,7 @@ export class ModerationService {
       const fileName = path.basename(filePath);
 
       // Construct the publicly accessible URL using Replit's environment variables
-      const replicoUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
-      const publicUrl = `${replicoUrl}/uploads/${fileName}`;
+      const publicUrl = `https://workspace.${process.env.REPL_OWNER}.repl.co/uploads/${fileName}`;
 
       console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
 
