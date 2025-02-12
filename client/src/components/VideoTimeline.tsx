@@ -24,6 +24,37 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
     });
   };
 
+  const captureVideoFrame = async (time: number) => {
+    if (!videoRef.current) return null;
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Save current time
+    const currentTime = video.currentTime;
+
+    // Set video to desired time
+    video.currentTime = time;
+
+    // Wait for video to update to new time
+    await new Promise<void>((resolve) => {
+      video.onseeked = () => resolve();
+    });
+
+    // Capture frame
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Reset video to original time
+    video.currentTime = currentTime;
+
+    return canvas.toDataURL('image/jpeg');
+  };
+
   return (
     <Card className="p-4 mt-4">
       <h3 className="text-lg font-semibold mb-2">Video Timeline Analysis</h3>
@@ -45,7 +76,7 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
             const flagTypes = Object.keys(point.confidence);
             const maxConfidence = Math.max(...Object.values(point.confidence));
             const severity = maxConfidence > 0.8 ? "high" : maxConfidence > 0.4 ? "medium" : "low";
-            
+
             return (
               <motion.div
                 key={index}
@@ -59,13 +90,22 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                 }}
               >
                 <div className="relative">
-                  <div className={`
-                    w-32 h-24 bg-muted rounded-md flex items-center justify-center
-                    ${severity === "high" ? "border-2 border-red-500" :
-                      severity === "medium" ? "border-2 border-yellow-500" :
-                      "border border-border"}
-                  `}>
-                    <span className="text-sm">
+                  <div 
+                    className={`
+                      w-32 h-24 bg-muted rounded-md flex items-center justify-center
+                      ${severity === "high" ? "border-2 border-red-500" :
+                        severity === "medium" ? "border-2 border-yellow-500" :
+                        "border border-border"}
+                    `}
+                  >
+                    <video
+                      className="w-full h-full object-cover rounded-md"
+                      src={videoRef.current?.src}
+                      preload="metadata"
+                    >
+                      <source src={videoRef.current?.src} type="video/mp4" />
+                    </video>
+                    <span className="absolute bottom-1 right-1 text-xs bg-black/70 text-white px-1 rounded">
                       {Math.floor(point.time)}s
                     </span>
                   </div>
