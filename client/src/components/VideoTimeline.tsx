@@ -23,7 +23,7 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
     });
 
     if (timeline?.length) {
-      console.log("Timeline data sample:", timeline[0]);
+      console.log("First thumbnail URL:", timeline[0]?.thumbnail);
     }
   }, [timeline, videoRef]);
 
@@ -76,10 +76,10 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
 
             console.log(`Rendering thumbnail ${index}:`, {
               time: point.time,
+              thumbnailUrl: point.thumbnail,
               flagTypes,
               maxConfidence,
-              severity,
-              thumbnail: point.thumbnail
+              severity
             });
 
             return (
@@ -90,7 +90,8 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                 onClick={() => {
                   console.log("Thumbnail clicked:", {
                     index,
-                    time: point.time
+                    time: point.time,
+                    thumbnailUrl: point.thumbnail
                   });
                   if (videoRef.current) {
                     videoRef.current.currentTime = point.time;
@@ -115,14 +116,23 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                         onError={(e) => {
                           console.error("Failed to load thumbnail:", point.thumbnail);
                           e.currentTarget.style.display = 'none';
+                          // Show fallback
+                          if (videoRef.current) {
+                            const fallbackDiv = document.createElement('div');
+                            fallbackDiv.className = 'w-full h-full';
+                            fallbackDiv.style.background = `url(${videoRef.current.src}#t=${point.time})`;
+                            fallbackDiv.style.backgroundSize = 'cover';
+                            fallbackDiv.style.backgroundPosition = 'center';
+                            e.currentTarget.parentElement?.appendChild(fallbackDiv);
+                          }
                         }}
                       />
                     )}
-                    {!point.thumbnail && (
+                    {!point.thumbnail && videoRef.current && (
                       <div 
                         className="w-full h-full"
                         style={{
-                          background: `url(${videoRef.current?.src}#t=${point.time})`,
+                          background: `url(${videoRef.current.src}#t=${point.time})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center'
                         }}
