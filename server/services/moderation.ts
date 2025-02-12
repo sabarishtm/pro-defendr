@@ -148,19 +148,19 @@ export class ModerationService {
 
       // Generate public URL using Replit's domain
       const repoUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
-        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
-        : 'http://localhost:3000';
-      const publicUrl = `${repoUrl}/${fileName}`;
+        ? `https://workspace.${process.env.REPL_OWNER}.repl.co/uploads/${fileName}`
+        : `http://localhost:3000/uploads/${fileName}`;
 
-      console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
+      console.log("Making API request to TheHive for media moderation with URL:", repoUrl);
 
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
-        { url: publicUrl },
+        { url: repoUrl },
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': process.env.THEHIVE_API_KEY // Remove 'Token' prefix
+            'Content-Type': 'application/json',
+            'Authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ' 
           }
         }
       );
