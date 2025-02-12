@@ -134,26 +134,20 @@ export class ModerationService {
 
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
-      // Create form data with the file
-      const formData = new FormData();
-      formData.append("image", readFileSync(filePath), {
-        filename: path.basename(filePath),
-        contentType: 'image/jpeg'
-      });
+      // Get the filename from the path
+      const fileName = path.basename(filePath);
 
-      const apiKey = process.env.THEHIVE_API_KEY?.startsWith('token ')
-        ? process.env.THEHIVE_API_KEY
-        : `token ${process.env.THEHIVE_API_KEY}`;
+      // Construct the publicly accessible URL for the file
+      const publicUrl = `${process.env.REPL_WEBVIEW_URL}/uploads/${fileName}`;
 
-      console.log("Making API request to TheHive for media moderation...");
+      console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
-        formData,
+        { url: publicUrl },
         {
           headers: {
-            'Accept': 'application/json',
-            'Authorization': apiKey,
-            ...formData.getHeaders()
+            'accept': 'application/json',
+            'authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
           }
         }
       );
