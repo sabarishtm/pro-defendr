@@ -141,6 +141,10 @@ export class ModerationService {
         contentType: 'image/jpeg'
       });
 
+      const apiKey = process.env.THEHIVE_API_KEY?.startsWith('token ')
+        ? process.env.THEHIVE_API_KEY
+        : `token ${process.env.THEHIVE_API_KEY}`;
+
       console.log("Making API request to TheHive for media moderation...");
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
@@ -148,7 +152,7 @@ export class ModerationService {
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': `${process.env.THEHIVE_API_KEY}`,
+            'Authorization': apiKey,
             ...formData.getHeaders()
           }
         }
