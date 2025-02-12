@@ -203,20 +203,22 @@ export function CaseDetails({
                   </video>
                 </div>
                 {contentItem.metadata.aiAnalysis?.timeline && (
-                  <VideoTimeline
-                    timeline={contentItem.metadata.aiAnalysis.timeline}
-                    videoRef={videoRef}
-                    onTimeSelect={(time) => {
-                      console.log("Time selected:", time);
-                      setSelectedTime(time);
-                    }}
-                  />
-                )}
-                {selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
-                  <TimelineAlert
-                    timeline={contentItem.metadata.aiAnalysis.timeline}
-                    selectedTime={selectedTime}
-                  />
+                  <>
+                    <VideoTimeline
+                      timeline={contentItem.metadata.aiAnalysis.timeline}
+                      videoRef={videoRef}
+                      onTimeSelect={(time) => {
+                        console.log("Time selected:", time);
+                        setSelectedTime(time);
+                      }}
+                    />
+                    {selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
+                      <TimelineAlert
+                        timeline={contentItem.metadata.aiAnalysis.timeline}
+                        selectedTime={selectedTime}
+                      />
+                    )}
+                  </>
                 )}
                 <div className="space-y-4 pt-4">
                   <div className="flex items-center justify-between">
