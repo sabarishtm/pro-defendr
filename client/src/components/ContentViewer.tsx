@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Card } from "./ui/card";
-import { ContentItem, VideoOutput } from "@shared/schema";
+import { ContentItem } from "@shared/schema";
 import { VideoTimeline } from "./VideoTimeline";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -30,12 +30,12 @@ export const ContentViewer = ({ content }: ContentViewerProps) => {
 
     if (content.type === "video") {
       return (
-        <div>
+        <div className="space-y-4">
           <video
             ref={videoRef}
             src={content.content}
             controls
-            className="max-w-full rounded-md"
+            className="w-full rounded-md"
           />
           {content.metadata.aiAnalysis?.timeline && (
             <>
@@ -59,19 +59,11 @@ export const ContentViewer = ({ content }: ContentViewerProps) => {
     return <p>Unsupported content type</p>;
   };
 
-  const filename = typeof content.metadata.originalMetadata === 'object' && 
-    content.metadata.originalMetadata !== null && 
-    'filename' in content.metadata.originalMetadata
-    ? String(content.metadata.originalMetadata.filename)
-    : null;
-
   return (
     <Card className="p-4">
       <div className="space-y-4">
-        {filename && (
-          <h2 className="text-xl font-semibold">
-            {filename}
-          </h2>
+        {content.name && (
+          <h2 className="text-xl font-semibold">{content.name}</h2>
         )}
         {renderContent()}
       </div>
@@ -80,12 +72,12 @@ export const ContentViewer = ({ content }: ContentViewerProps) => {
 };
 
 interface TimelineWarningsProps {
-  timeline: VideoOutput[];
+  timeline: ContentItem["metadata"]["aiAnalysis"]["timeline"];
   selectedTime: number;
 }
 
 const TimelineWarnings = ({ timeline, selectedTime }: TimelineWarningsProps) => {
-  const timePoint = timeline?.find(point => Math.abs(point.time - selectedTime) < 0.1);
+  const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
   if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
 
   return (
@@ -96,7 +88,7 @@ const TimelineWarnings = ({ timeline, selectedTime }: TimelineWarningsProps) => 
         <ul className="list-disc pl-4 mt-2">
           {Object.entries(timePoint.confidence).map(([type, confidence]) => (
             <li key={type}>
-              {type}: {(Number(confidence) * 100).toFixed(1)}% confidence
+              {type}: {(confidence * 100).toFixed(1)}% confidence
             </li>
           ))}
         </ul>
