@@ -1,7 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
 import { ContentItem, ContentRegion, VideoOutput } from "@shared/schema";
-import { existsSync, statSync, readFileSync } from "fs";
+import { existsSync, statSync, readFileSync, mkdirSync, copyFileSync } from "fs";
 import path from "path";
 import { storage } from "../storage";
 import OpenAI from "openai";
@@ -135,13 +135,22 @@ export class ModerationService {
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
       // Generate a publicly accessible URL for the image
-      // In Replit, files in the public directory are accessible via the app's URL
-      const repoUrl = process.env.REPL_SLUG ? 
-        `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 
-        'http://localhost:3000';
+      // Ensure file is in the public directory
+      const publicDir = path.join(process.cwd(), 'public');
+      const fileName = path.basename(filePath);
+      const publicFilePath = path.join(publicDir, fileName);
 
-      const relativePath = filePath.replace(process.cwd(), '');
-      const publicUrl = `${repoUrl}${relativePath}`;
+      // Copy file to public directory if needed
+      if (!existsSync(publicDir)) {
+        mkdirSync(publicDir, { recursive: true });
+      }
+      copyFileSync(filePath, publicFilePath);
+
+      // Generate public URL using Replit's domain
+      const repoUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+        : 'http://localhost:3000';
+      const publicUrl = `${repoUrl}/${fileName}`;
 
       console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
 
@@ -151,7 +160,7 @@ export class ModerationService {
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Token ${process.env.THEHIVE_API_KEY}`
+            'Authorization': process.env.THEHIVE_API_KEY // Remove 'Token' prefix
           }
         }
       );
