@@ -155,7 +155,11 @@ export class ModerationService {
 
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
-        { url: repoUrl },
+        { 
+          url: repoUrl,
+          workflow: "media_moderation",
+          sync: true
+        },
         {
           headers: {
             'Accept': 'application/json',
@@ -165,46 +169,24 @@ export class ModerationService {
         }
       );
 
-      const videoOutput: VideoOutput[] = [];
-      try {
-        const timelineData = response.data.status[0].response.timeline;
-
-        if (timelineData && Array.isArray(timelineData)) {
-          for (const frame of timelineData) {
-            const confidence: Record<string, number> = {};
-
-            if (Array.isArray(frame.classes)) {
-              frame.classes.forEach((cls: { class: string; score: number }) => {
-                if (!cls.class.startsWith('no_') && cls.score > 0) {
-                  const key = cls.class.replace(/^yes_/, '').replace(/_/g, ' ');
-                  confidence[key] = cls.score;
-                }
-              });
-            }
-
-            const time = typeof frame.time === 'number' ? frame.time :
-                        typeof frame.time === 'string' ? parseFloat(frame.time) : 0;
-
-            videoOutput.push({ time, confidence });
-          }
-        }
-      } catch (e) {
-        console.error("Error processing timeline data:", e);
-      }
-
-      // Process overall confidence scores
-      const result = response.data.status[0].response.output[0].classes;
+      // Process response data
+      const result = response.data.status[0].response;
       const scores: Record<string, number> = {};
 
-      result.forEach((item: { class: string; score: number }) => {
-        if (item.score <= 0 || item.class.startsWith('no_')) return;
-        const cleanName = item.class
-          .replace(/^yes_/, '')
-          .replace(/_/g, ' ');
-        if (item.score > 0.001) {
-          scores[cleanName] = item.score;
-        }
-      });
+      // Process scores from response
+      if (result.output && result.output[0] && result.output[0].classes) {
+        result.output[0].classes.forEach((item: { class: string; score: number }) => {
+          if (item.score <= 0 || item.class.startsWith('no_')) return;
+
+          const cleanName = item.class
+            .replace(/^yes_/, '')
+            .replace(/_/g, ' ');
+
+          if (item.score > 0.001) {
+            scores[cleanName] = item.score;
+          }
+        });
+      }
 
       // Determine status based on scores
       const maxScore = Math.max(0, ...Object.values(scores));
@@ -226,8 +208,8 @@ export class ModerationService {
         status,
         regions,
         aiConfidence: scores,
-        output: videoOutput.length > 0 ? videoOutput : undefined,
       };
+
     } catch (error) {
       console.error("TheHive API error:", error);
       if (axios.isAxiosError(error)) {
@@ -237,7 +219,6 @@ export class ModerationService {
         status: "flagged",
         regions: [],
         aiConfidence: { "api_error": 1.0 },
-        output: undefined
       };
     }
   }
