@@ -137,8 +137,8 @@ export class ModerationService {
       // Get the filename from the path
       const fileName = path.basename(filePath);
 
-      // Construct the publicly accessible URL for the file using Replit Riker URL
-      const baseUrl = process.env.REPL_WEBVIEW_URL?.replace(/\/$/, '');
+      // Ensure we have a valid base URL by using the Riker URL format
+      const baseUrl = 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev';
       const publicUrl = `${baseUrl}/uploads/${fileName}`;
 
       console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
