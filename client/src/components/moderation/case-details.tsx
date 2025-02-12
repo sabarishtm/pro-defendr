@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { VideoTimeline } from "./video-timeline";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
@@ -20,16 +21,17 @@ interface CaseDetailsProps {
   onComplete: () => void;
 }
 
-export function CaseDetails({ 
-  contentItem, 
+export function CaseDetails({
+  contentItem,
   moderationCase,
-  onComplete 
+  onComplete
 }: CaseDetailsProps) {
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState(false);
-  const [blurLevel, setBlurLevel] = useState(75); // Initial 75% blur
+  const [blurLevel, setBlurLevel] = useState(75);
   const [isBlurred, setIsBlurred] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -78,6 +80,13 @@ export function CaseDetails({
     };
   };
 
+  const handleTimelineSelect = (time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+      videoRef.current.play();
+    }
+  };
+
   const renderContent = () => {
     const type = contentItem.type?.toLowerCase() || 'text';
 
@@ -114,8 +123,8 @@ export function CaseDetails({
             ) : (
               <>
                 <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
-                  <img 
-                    src={contentItem.content} 
+                  <img
+                    src={contentItem.content}
                     alt="Content for review"
                     className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
                     style={getBlurStyle()}
@@ -181,6 +190,7 @@ export function CaseDetails({
               <>
                 <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
                   <video
+                    ref={videoRef}
                     src={contentItem.content}
                     controls
                     className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
@@ -226,6 +236,14 @@ export function CaseDetails({
                     disabled={!isBlurred}
                   />
                 </div>
+
+                {contentItem.metadata?.aiAnalysis?.output && (
+                  <VideoTimeline
+                    timeline={contentItem.metadata.aiAnalysis.output}
+                    onTimeSelect={handleTimelineSelect}
+                    videoRef={videoRef}
+                  />
+                )}
               </>
             )}
           </div>
@@ -305,11 +323,11 @@ export function CaseDetails({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Suggested Action:</span>
                       <Badge variant={
-                        contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve" 
-                          ? "default"  
+                        contentItem.metadata.aiAnalysis.classification.suggestedAction === "approve"
+                          ? "default"
                           : contentItem.metadata.aiAnalysis.classification.suggestedAction === "reject"
-                          ? "destructive"
-                          : "secondary"  
+                            ? "destructive"
+                            : "secondary"
                       }>
                         {contentItem.metadata.aiAnalysis.classification.suggestedAction}
                       </Badge>
@@ -322,7 +340,7 @@ export function CaseDetails({
                           {Math.round(contentItem.metadata.aiAnalysis.classification.confidence * 100)}%
                         </span>
                       </div>
-                      <Progress 
+                      <Progress
                         value={contentItem.metadata.aiAnalysis.classification.confidence * 100}
                         className="h-1.5"
                       />
