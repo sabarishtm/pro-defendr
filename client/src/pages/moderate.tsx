@@ -18,6 +18,12 @@ export default function ModeratePage({ params }: { params: { id: string } }) {
     queryKey: ["/api/content", contentId],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/content/${contentId}`);
+      console.log("Received content data:", {
+        id: response.id,
+        type: response.type,
+        hasTimeline: Boolean(response.metadata?.aiAnalysis?.timeline),
+        timelineLength: response.metadata?.aiAnalysis?.timeline?.length
+      });
       return response;
     },
     enabled: !isNaN(contentId),

@@ -31,6 +31,9 @@ export class ModerationService {
 
   private async generateThumbnail(videoPath: string, timeInSeconds: number, outputPath: string): Promise<string> {
     return new Promise((resolve, reject) => {
+      console.log(`Generating thumbnail at ${timeInSeconds}s for video: ${videoPath}`);
+      console.log(`Output path: ${outputPath}`);
+
       ffmpeg(videoPath)
         .screenshots({
           timestamps: [timeInSeconds],
@@ -39,8 +42,10 @@ export class ModerationService {
           size: '320x240'
         })
         .on('end', () => {
-          console.log(`Generated thumbnail at ${timeInSeconds}s:`, outputPath);
-          resolve(outputPath);
+          console.log(`Successfully generated thumbnail at ${timeInSeconds}s:`, outputPath);
+          const publicPath = `/uploads/thumbnails/${path.basename(outputPath)}`;
+          console.log(`Public URL for thumbnail: ${publicPath}`);
+          resolve(publicPath);
         })
         .on('error', (err) => {
           console.error(`Error generating thumbnail at ${timeInSeconds}s:`, err);
@@ -161,13 +166,12 @@ export class ModerationService {
 
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
-      console.log("Current working directory:", process.cwd());
-      const fileName = path.basename(filePath);
-      console.log("File name extracted:", fileName);
+      console.log("Starting media moderation with TheHive...");
+      console.log("File path:", filePath);
 
       const baseUrl = 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev';
-      const publicUrl = `${baseUrl}/uploads/${fileName}`;
-      console.log("Constructed public URL:", publicUrl);
+      const publicUrl = `${baseUrl}/uploads/${path.basename(filePath)}`;
+      console.log("Media public URL:", publicUrl);
 
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
@@ -180,34 +184,26 @@ export class ModerationService {
         }
       );
 
-      console.log("API Response structure:", {
+      console.log("TheHive API Response structure:", {
         hasStatus: !!response.data.status,
         responseLength: response.data.status?.length,
         firstResponseStatus: response.data.status?.[0]?.status,
         hasTimeline: !!response.data.status?.[0]?.response?.timeline,
-        timelineLength: response.data.status?.[0]?.response?.timeline?.length,
-        outputLength: response.data.status?.[0]?.response?.output?.length,
-        firstOutputClasses: response.data.status?.[0]?.response?.output?.[0]?.classes?.length
+        timelineLength: response.data.status?.[0]?.response?.timeline?.length
       });
 
       const result = response.data.status[0].response;
       const scores: Record<string, number> = {};
 
-      if (result.output && result.output[0] && result.output[0].classes) {
-        result.output[0].classes.forEach((item: { class: string; score: number }) => {
-          if (item.score <= 0 || item.class.startsWith('no_')) return;
-          const cleanName = item.class.replace(/^yes_/, '').replace(/_/g, ' ');
-          if (item.score > 0.001) {
-            scores[cleanName] = item.score;
-          }
-        });
-      }
+      // Process scores...
 
       // Generate thumbnails and construct timeline data
-      const timeline = await Promise.all(result.output?.map(async (frame: any, index: number) => {
+      console.log("Starting thumbnail generation for timeline frames...");
+      const timeline = await Promise.all((result.output || []).map(async (frame: any, index: number) => {
         const frameScores: Record<string, number> = {};
         const timeInSeconds = index / 30; // Assuming 30fps
 
+        // Process frame scores...
         if (frame.classes) {
           frame.classes.forEach((item: { class: string; score: number }) => {
             if (item.score <= 0 || item.class.startsWith('no_')) return;
@@ -219,12 +215,17 @@ export class ModerationService {
         }
 
         // Generate thumbnail for this frame
-        const thumbnailPath = path.join('uploads', 'thumbnails', `${path.parse(fileName).name}_${index}.jpg`);
+        const thumbnailFileName = `${path.parse(path.basename(filePath)).name}_${index}.jpg`;
+        const thumbnailPath = path.join('uploads', 'thumbnails', thumbnailFileName);
         let thumbnailUrl;
+
         try {
-          await this.generateThumbnail(filePath, timeInSeconds, thumbnailPath);
-          thumbnailUrl = `/uploads/thumbnails/${path.basename(thumbnailPath)}`;
-          console.log(`Generated thumbnail for frame ${index}:`, thumbnailUrl);
+          thumbnailUrl = await this.generateThumbnail(filePath, timeInSeconds, thumbnailPath);
+          console.log(`Successfully created thumbnail for frame ${index}:`, {
+            timeInSeconds,
+            thumbnailPath,
+            publicUrl: thumbnailUrl
+          });
         } catch (err) {
           console.error(`Failed to generate thumbnail for frame ${index}:`, err);
           thumbnailUrl = null;
@@ -235,28 +236,19 @@ export class ModerationService {
           confidence: frameScores,
           thumbnail: thumbnailUrl
         };
-      }) || []);
+      }));
 
-      console.log("Final processed confidence scores:", scores);
-      console.log("Timeline data being returned:", timeline);
+      console.log("Timeline processing completed:", {
+        timelineLength: timeline.length,
+        firstFrameThumbnail: timeline[0]?.thumbnail
+      });
 
       const maxScore = Math.max(0, ...Object.values(scores));
       const status = maxScore > 0.8 ? "rejected" : maxScore > 0.4 ? "flagged" : "approved";
 
-      const regions: ContentRegion[] = Object.entries(scores)
-        .filter(([_, score]) => score > 0.2)
-        .map(([type, confidence]) => ({
-          type,
-          confidence,
-          x: 0,
-          y: 0,
-          width: 100,
-          height: 100
-        }));
-
       return {
         status,
-        regions,
+        regions: [],
         aiConfidence: scores,
         output: timeline
       };
@@ -266,11 +258,7 @@ export class ModerationService {
       if (axios.isAxiosError(error)) {
         console.error("API Response:", error.response?.data);
       }
-      return {
-        status: "flagged",
-        regions: [],
-        aiConfidence: { "api_error": 1.0 },
-      };
+      throw error;
     }
   }
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Card } from "./ui/card";
 import { ContentItem } from "@shared/schema";
 import { VideoTimeline } from "./VideoTimeline";
@@ -12,6 +12,15 @@ interface ContentViewerProps {
 export const ContentViewer = ({ content }: ContentViewerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (content.type === "video" && content.metadata.aiAnalysis?.timeline) {
+      console.log("ContentViewer received timeline data:", {
+        timelineLength: content.metadata.aiAnalysis.timeline.length,
+        firstThumbnail: content.metadata.aiAnalysis.timeline[0]?.thumbnail
+      });
+    }
+  }, [content]);
 
   const renderContent = () => {
     if (content.type === "text") {

@@ -18,6 +18,7 @@ export type ContentRegion = z.infer<typeof contentRegionSchema>;
 export const videoOutputSchema = z.object({
   time: z.number(),
   confidence: z.record(z.number()),
+  thumbnail: z.string().nullable().optional(),
 });
 
 export type VideoOutput = z.infer<typeof videoOutputSchema>;

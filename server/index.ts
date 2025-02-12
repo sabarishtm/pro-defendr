@@ -2,13 +2,32 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
+import fs from "fs";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Ensure uploads and thumbnails directories exist
+const uploadsDir = path.join(process.cwd(), 'uploads');
+const thumbnailsDir = path.join(uploadsDir, 'thumbnails');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  log("Created uploads directory");
+}
+
+if (!fs.existsSync(thumbnailsDir)) {
+  fs.mkdirSync(thumbnailsDir, { recursive: true });
+  log("Created thumbnails directory");
+}
+
 // Configure static file serving for uploads and public directories
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/uploads', (req, res, next) => {
+  log(`Serving static file from uploads: ${req.url}`);
+  next();
+}, express.static(uploadsDir));
+
 app.use(express.static(path.join(process.cwd(), 'public')));
 
 app.use((req, res, next) => {
@@ -33,7 +52,7 @@ app.use((req, res, next) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
-    throw err;
+    console.error("Server error:", err);
   });
 
   if (app.get("env") === "development") {
