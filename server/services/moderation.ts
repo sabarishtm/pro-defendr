@@ -138,10 +138,11 @@ export class ModerationService {
       const fileBuffer = readFileSync(filePath);
       const fileName = path.basename(filePath);
 
-      // Use 'image' field name instead of 'media'
-      formData.append("image", fileBuffer, {
+      // Add required workflow parameters for image moderation
+      formData.append('workflow', 'general_media');
+      formData.append('image', fileBuffer, {
         filename: fileName,
-        contentType: fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
+        contentType: 'image/jpeg'
       });
 
       console.log("Making API request to TheHive for media moderation...");
