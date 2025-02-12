@@ -175,7 +175,7 @@ export class ModerationService {
         {
           headers: {
             'accept': 'application/json',
-            'authorization': `Token ${process.env.THEHIVE_API_KEY}`
+            'authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
           }
         }
       );
