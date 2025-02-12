@@ -134,29 +134,18 @@ export class ModerationService {
 
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
-      // Generate a publicly accessible URL for the image
-      // Ensure file is in the public directory
-      const publicDir = path.join(process.cwd(), 'public');
+      console.log("Making API request to TheHive for media moderation with URL:", filePath);
+
+      // The file should already be in the uploads directory and accessible via the /uploads path
       const fileName = path.basename(filePath);
-      const publicFilePath = path.join(publicDir, fileName);
+      const publicUrl = `${process.env.REPLIT_URL || 'http://localhost:5000'}/uploads/${fileName}`;
 
-      // Copy file to public directory if needed
-      if (!existsSync(publicDir)) {
-        mkdirSync(publicDir, { recursive: true });
-      }
-      copyFileSync(filePath, publicFilePath);
-
-      // Generate public URL using Replit's domain
-      const repoUrl = process.env.REPL_SLUG && process.env.REPL_OWNER
-        ? `https://workspace.${process.env.REPL_OWNER}.repl.co/uploads/${fileName}`
-        : `http://localhost:3000/uploads/${fileName}`;
-
-      console.log("Making API request to TheHive for media moderation with URL:", repoUrl);
+      console.log("Making API request to TheHive for media moderation with URL:", publicUrl);
 
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
         { 
-          url: repoUrl,
+          url: publicUrl,
           workflow: "media_moderation",
           sync: true
         },
@@ -164,7 +153,7 @@ export class ModerationService {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ' 
+            'Authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
           }
         }
       );
