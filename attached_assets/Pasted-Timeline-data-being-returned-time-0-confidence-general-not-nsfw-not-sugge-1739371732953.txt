@@ -1,0 +1,304 @@
+Timeline data being returned: [
+  {
+    time: 0,
+    confidence: {
+      'general not nsfw not suggestive': 0.9915919303894044,
+      'general suggestive': 0.008400248363614082,
+      text: 0.9968401193618774,
+      natural: 0.9999990463256836,
+      'overlay text': 0.20353323221206665,
+      'sportswear bottoms': 0.9960577487945556,
+      miniskirt: 0.012853167951107023
+    }
+  },
+  {
+    time: 0.03333333333333333,
+    confidence: {
+      'general not nsfw not suggestive': 0.9889506697654724,
+      'general suggestive': 0.011029564775526524,
+      text: 0.9968153834342957,
+      natural: 0.9999992847442628,
+      'overlay text': 0.3509005010128021,
+      'child present': 0.024713821709156036,
+      'sportswear bottoms': 0.9986351132392884,
+      miniskirt: 0.05317799001932144
+    }
+  },
+  {
+    time: 0.06666666666666667,
+    confidence: {
+      'general not nsfw not suggestive': 0.9476723670959472,
+      'general suggestive': 0.0523107573390007,
+      'female swimwear': 0.001455118414014578,
+      'male shirtless': 0.0012990041868761182,
+      text: 0.9988334774971008,
+      natural: 0.9999996423721312,
+      'overlay text': 0.2410862147808075,
+      'child present': 0.004697069991379976,
+      'sportswear bottoms': 0.9993770718574524
+    }
+  },
+  {
+    time: 0.1,
+    confidence: {
+      'general not nsfw not suggestive': 0.6711550951004028,
+      'general suggestive': 0.32881826162338257,
+      'female underwear': 0.007153469137847424,
+      'female swimwear': 0.0387042872607708,
+      'male shirtless': 0.017475178465247154,
+      text: 0.9984320998191832,
+      natural: 0.9999998807907104,
+      'overlay text': 0.025545308366417885,
+      'child present': 0.006777794100344181,
+      'sports bra': 0.0032714272383600473,
+      cleavage: 0.01228396873921156,
+      'sportswear bottoms': 0.9999719858169556,
+      bodysuit: 0.0025276080705225468
+    }
+  },
+  {
+    time: 0.13333333333333333,
+    confidence: {
+      'general not nsfw not suggestive': 0.6563445925712585,
+      'general suggestive': 0.3436333239078522,
+      'female underwear': 0.05886029079556465,
+      'female swimwear': 0.03350992873311043,
+      'male shirtless': 0.007267781998962164,
+      text: 0.9960079193115234,
+      natural: 0.9999998807907104,
+      'overlay text': 0.4451541304588318,
+      'child present': 0.21781377494335177,
+      'sports bra': 0.1498217135667801,
+      cleavage: 0.29918670654296875,
+      'sportswear bottoms': 0.9998551607131958
+    }
+  },
+  {
+    time: 0.16666666666666666,
+    confidence: {
+      'general not nsfw not suggestive': 0.6604422330856323,
+      'general suggestive': 0.33947980403900146,
+      'female underwear': 0.04045134782791138,
+      'female swimwear': 0.01405783649533987,
+      text: 0.1652258187532425,
+      natural: 0.999994158744812,
+      'overlay text': 0.5855035781860352,
+      'sports bra': 0.15243640542030334,
+      cleavage: 0.06468645483255386,
+      'sportswear bottoms': 0.9815297722816468,
+      miniskirt: 0.002146943937987089
+    }
+  },
+  {
+    time: 0.2,
+    confidence: {
+      'general not nsfw not suggestive': 0.544611930847168,
+      'general suggestive': 0.45528697967529297,
+      'female underwear': 0.08142241835594177,
+      'female swimwear': 0.0011454734485596418,
+      text: 0.17351463437080383,
+      natural: 0.99999737739563,
+      'overlay text': 0.6010702252388,
+      'sports bra': 0.4187039732933045,
+      cleavage: 0.17017889022827148,
+      'sportswear bottoms': 0.870989978313446,
+      miniskirt: 0.013424990698695185
+    }
+  },
+  {
+    time: 0.23333333333333334,
+    confidence: {
+      'general not nsfw not suggestive': 0.999077320098877,
+      text: 0.16963957250118256,
+      natural: 0.9999971389770508,
+      'overlay text': 0.5576109886169434,
+      'sportswear bottoms': 0.017806991934776306
+    }
+  },
+  {
+    time: 0.26666666666666666,
+    confidence: {
+      'general suggestive': 0.9999380111694336,
+      'female underwear': 0.27618464827537537,
+      'male underwear': 0.005188398994505405,
+      'female swimwear': 0.13022856414318085,
+      'male shirtless': 0.09000875800848007,
+      text: 0.0016259258845821023,
+      natural: 0.9999998807907104,
+      'overlay text': 0.001494344207458198,
+      panties: 0.045504357665777206,
+      'sportswear bottoms': 0.8591618537902832,
+      miniskirt: 0.1837673187255859,
+      bodysuit: 0.04282106086611748
+    }
+  },
+  {
+    time: 0.3,
+    confidence: {
+      'general not nsfw not suggestive': 0.0011146111646667125,
+      'general nsfw': 0.22986926138401031,
+      'general suggestive': 0.7690161466598511,
+      'female underwear': 0.08994553983211517,
+      'female nudity': 0.19310833513736725,
+      'female swimwear': 0.006399750709533691,
+      'male shirtless': 0.01090550422668457,
+      text: 0.98382169008255,
+      natural: 0.9999501705169678,
+      'overlay text': 0.6927613615989685,
+      'realistic nsfw': 0.16046610474586487,
+      'sexual intent': 0.5761803984642029,
+      undressed: 0.3459375500679016,
+      cleavage: 0.10093510150909424,
+      'sportswear bottoms': 0.9999566078186036,
+      breast: 0.14712026715278623
+    }
+  },
+  {
+    time: 0.3333333333333333,
+    confidence: {
+      'general not nsfw not suggestive': 0.934973120689392,
+      'general suggestive': 0.06497783958911896,
+      'female underwear': 0.0047697327099740505,
+      text: 0.9965123534202576,
+      natural: 0.9999969005584716,
+      'overlay text': 0.09294337034225464,
+      'sportswear bottoms': 0.9997252821922302,
+      miniskirt: 0.17241264879703522
+    }
+  },
+  {
+    time: 0.36666666666666664,
+    confidence: {
+      'general not nsfw not suggestive': 0.9648424983024596,
+      'general suggestive': 0.03512977808713913,
+      'male shirtless': 0.0011909102322533729,
+      text: 0.9976378679275512,
+      natural: 0.9999991655349731,
+      'overlay text': 0.09401826560497284,
+      marijuana: 0.0027840102557092905,
+      'sportswear bottoms': 0.9999977350234984
+    }
+  },
+  {
+    time: 0.4,
+    confidence: {
+      'general not nsfw not suggestive': 0.9759122729301452,
+      'general suggestive': 0.024079008027911183,
+      'male shirtless': 0.001331013860180974,
+      text: 0.9993677735328674,
+      natural: 0.9999988079071044,
+      'overlay text': 0.04503855109214783,
+      'sportswear bottoms': 0.9999955892562866
+    }
+  },
+  {
+    time: 0.43333333333333335,
+    confidence: {
+      'general not nsfw not suggestive': 0.9979854822158812,
+      'general suggestive': 0.002008656971156597,
+      text: 0.9982019662857056,
+      natural: 0.9999977350234984,
+      'overlay text': 0.28409361839294434,
+      'sportswear bottoms': 0.9999896287918092
+    }
+  },
+  {
+    time: 0.4666666666666667,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999935626983644,
+      text: 0.999157190322876,
+      natural: 0.9999997615814208,
+      'sportswear bottoms': 0.9999923706054688,
+      miniskirt: 0.0021891104988753796
+    }
+  },
+  {
+    time: 0.5,
+    confidence: {
+      'general not nsfw not suggestive': 0.9977729916572572,
+      'general suggestive': 0.002226196462288499,
+      text: 0.997069537639618,
+      natural: 0.9999997615814208,
+      'child present': 0.002436145208775997,
+      'sportswear bottoms': 0.9999912977218628
+    }
+  },
+  {
+    time: 0.5333333333333333,
+    confidence: {
+      'general not nsfw not suggestive': 0.9991636276245116,
+      text: 0.998771607875824,
+      natural: 0.9999996423721312,
+      'child present': 0.001809089560993016,
+      'sportswear bottoms': 0.9999806880950928
+    }
+  },
+  {
+    time: 0.5666666666666667,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999148845672609,
+      text: 0.99834942817688,
+      natural: 0.9999997615814208,
+      'overlay text': 0.2630186676979065,
+      'sportswear bottoms': 0.9999884366989136
+    }
+  },
+  {
+    time: 0.6,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999639987945556,
+      text: 0.998868465423584,
+      natural: 0.9999997615814208,
+      'overlay text': 0.23962964117527008,
+      'child present': 0.008228573016822338,
+      'sportswear bottoms': 0.999996304512024
+    }
+  },
+  {
+    time: 0.6333333333333333,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999336004257202,
+      text: 0.9993994235992432,
+      natural: 1,
+      'overlay text': 0.024191733449697495,
+      'child present': 0.008178641088306904,
+      cleavage: 0.0090654194355011,
+      'sportswear bottoms': 0.9999994039535522
+    }
+  },
+  {
+    time: 0.6666666666666666,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999325275421144,
+      text: 0.999543309211731,
+      natural: 0.9999998807907104,
+      'overlay text': 0.4838306307792664,
+      'child present': 0.003988787531852722,
+      cleavage: 0.22690875828266144,
+      'sportswear bottoms': 0.9999874830245972,
+      miniskirt: 0.0010383980115875602
+    }
+  },
+  {
+    time: 0.7,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999799728393556,
+      text: 0.999716579914093,
+      natural: 1,
+      'drinking alcohol': 0.002773529151454568,
+      cleavage: 0.17022885382175446,
+      'sportswear bottoms': 0.9999991655349731
+    }
+  },
+  {
+    time: 0.7333333333333333,
+    confidence: {
+      'general not nsfw not suggestive': 0.9999982118606568,
+      text: 0.9986749291419984,
+      natural: 0.9999998807907104,
+      'child present': 0.0010036873864009976,
+      'drinking alcohol': 0.05762524530291557,
+      'sportswear bottoms': 0.999997854232788,
+      miniskirt: 0.001139742904342711
+    }
+  }

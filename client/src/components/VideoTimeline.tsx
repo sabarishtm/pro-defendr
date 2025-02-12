@@ -78,7 +78,8 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
               time: point.time,
               flagTypes,
               maxConfidence,
-              severity
+              severity,
+              thumbnail: point.thumbnail
             });
 
             return (
@@ -106,14 +107,22 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                         "border border-border"}
                     `}
                   >
-                    <div 
-                      className="w-full h-full"
-                      style={{
-                        background: `url(${videoRef.current?.src}#t=${point.time})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
-                    />
+                    {point.thumbnail ? (
+                      <img 
+                        src={point.thumbnail}
+                        alt={`Timeline thumbnail at ${point.time}s`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div 
+                        className="w-full h-full"
+                        style={{
+                          background: `url(${videoRef.current?.src}#t=${point.time})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        }}
+                      />
+                    )}
                     <span className="absolute bottom-1 right-1 text-xs bg-black/70 text-white px-1 rounded">
                       {Math.floor(point.time)}s
                     </span>

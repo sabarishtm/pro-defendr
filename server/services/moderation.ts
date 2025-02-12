@@ -5,6 +5,7 @@ import { existsSync, statSync, readFileSync, mkdirSync, copyFileSync } from "fs"
 import path from "path";
 import { storage } from "../storage";
 import OpenAI from "openai";
+import ffmpeg from "fluent-ffmpeg";
 
 interface ModerationResult {
   status: ContentItem["status"];
@@ -19,6 +20,32 @@ export class ModerationService {
   constructor() {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Ensure thumbnails directory exists
+    const thumbnailsDir = path.join(process.cwd(), 'uploads', 'thumbnails');
+    if (!existsSync(thumbnailsDir)) {
+      mkdirSync(thumbnailsDir, { recursive: true });
+    }
+  }
+
+  private async generateThumbnail(videoPath: string, timeInSeconds: number, outputPath: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      ffmpeg(videoPath)
+        .screenshots({
+          timestamps: [timeInSeconds],
+          filename: path.basename(outputPath),
+          folder: path.dirname(outputPath),
+          size: '320x240'
+        })
+        .on('end', () => {
+          console.log(`Generated thumbnail at ${timeInSeconds}s:`, outputPath);
+          resolve(outputPath);
+        })
+        .on('error', (err) => {
+          console.error(`Error generating thumbnail at ${timeInSeconds}s:`, err);
+          reject(err);
+        });
     });
   }
 
@@ -134,49 +161,25 @@ export class ModerationService {
 
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
-      // Log current working directory
       console.log("Current working directory:", process.cwd());
-
-      // Get the filename from the path
       const fileName = path.basename(filePath);
       console.log("File name extracted:", fileName);
 
-      // Log URL construction process
-      console.log("URL Construction:", {
-        repl_id: process.env.REPL_ID,
-        repl_slug: process.env.REPL_SLUG,
-        repl_owner: process.env.REPL_OWNER,
-        webview_url: process.env.REPL_WEBVIEW_URL,
-        file_path: filePath
-      });
-
-      // Ensure we have a valid base URL by using the Riker URL format
       const baseUrl = 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev';
       const publicUrl = `${baseUrl}/uploads/${fileName}`;
       console.log("Constructed public URL:", publicUrl);
 
-      // Log the complete request configuration
-      const requestConfig = {
-        url: 'https://api.thehive.ai/api/v2/task/sync',
-        method: 'post',
-        headers: {
-          'accept': 'application/json',
-          'authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
-        },
-        data: { url: publicUrl }
-      };
-      console.log("Making API request to TheHive with config:", JSON.stringify(requestConfig, null, 2));
-
       const response = await axios.post(
-        requestConfig.url,
-        requestConfig.data,
+        'https://api.thehive.ai/api/v2/task/sync',
+        { url: publicUrl },
         {
-          headers: requestConfig.headers
+          headers: {
+            'accept': 'application/json',
+            'authorization': `Token ${process.env.THEHIVE_API_KEY}`
+          }
         }
       );
 
-      // Log the complete API response
-      console.log("Complete TheHive API Response:", JSON.stringify(response.data, null, 2));
       console.log("API Response structure:", {
         hasStatus: !!response.data.status,
         responseLength: response.data.status?.length,
@@ -189,62 +192,57 @@ export class ModerationService {
 
       const result = response.data.status[0].response;
       const scores: Record<string, number> = {};
-      console.log("Processing moderation response:", {
-        hasTimeline: !!result.timeline,
-        timelineLength: result.timeline?.length,
-        outputLength: result.output?.length,
-        firstOutput: result.output?.[0]
-      });
 
-      // Process scores from response
       if (result.output && result.output[0] && result.output[0].classes) {
         result.output[0].classes.forEach((item: { class: string; score: number }) => {
           if (item.score <= 0 || item.class.startsWith('no_')) return;
-
-          const cleanName = item.class
-            .replace(/^yes_/, '')
-            .replace(/_/g, ' ');
-
+          const cleanName = item.class.replace(/^yes_/, '').replace(/_/g, ' ');
           if (item.score > 0.001) {
             scores[cleanName] = item.score;
           }
         });
       }
 
-      // Construct timeline data from frame analysis
-      const timeline = result.output?.map((frame: any, index: number) => {
+      // Generate thumbnails and construct timeline data
+      const timeline = await Promise.all(result.output?.map(async (frame: any, index: number) => {
         const frameScores: Record<string, number> = {};
+        const timeInSeconds = index / 30; // Assuming 30fps
 
         if (frame.classes) {
           frame.classes.forEach((item: { class: string; score: number }) => {
             if (item.score <= 0 || item.class.startsWith('no_')) return;
-
-            const cleanName = item.class
-              .replace(/^yes_/, '')
-              .replace(/_/g, ' ');
-
+            const cleanName = item.class.replace(/^yes_/, '').replace(/_/g, ' ');
             if (item.score > 0.001) {
               frameScores[cleanName] = item.score;
             }
           });
         }
 
-        // Calculate time based on frame index and assuming 30fps
-        return {
-          time: index / 30, // Convert frame index to seconds
-          confidence: frameScores
-        };
-      }) || [];
+        // Generate thumbnail for this frame
+        const thumbnailPath = path.join('uploads', 'thumbnails', `${path.parse(fileName).name}_${index}.jpg`);
+        let thumbnailUrl;
+        try {
+          await this.generateThumbnail(filePath, timeInSeconds, thumbnailPath);
+          thumbnailUrl = `/uploads/thumbnails/${path.basename(thumbnailPath)}`;
+          console.log(`Generated thumbnail for frame ${index}:`, thumbnailUrl);
+        } catch (err) {
+          console.error(`Failed to generate thumbnail for frame ${index}:`, err);
+          thumbnailUrl = null;
+        }
 
-      // Log final processed data
+        return {
+          time: timeInSeconds,
+          confidence: frameScores,
+          thumbnail: thumbnailUrl
+        };
+      }) || []);
+
       console.log("Final processed confidence scores:", scores);
       console.log("Timeline data being returned:", timeline);
 
-      // Determine overall status based on scores
       const maxScore = Math.max(0, ...Object.values(scores));
       const status = maxScore > 0.8 ? "rejected" : maxScore > 0.4 ? "flagged" : "approved";
 
-      // Create regions for scores above threshold
       const regions: ContentRegion[] = Object.entries(scores)
         .filter(([_, score]) => score > 0.2)
         .map(([type, confidence]) => ({
@@ -267,15 +265,6 @@ export class ModerationService {
       console.error("TheHive API error:", error);
       if (axios.isAxiosError(error)) {
         console.error("API Response:", error.response?.data);
-        console.error("Request Config:", {
-          url: error.config?.url,
-          headers: {
-            ...error.config?.headers,
-            'Authorization': 'token [REDACTED]' // Log sanitized version
-          },
-          method: error.config?.method,
-          data: error.config?.data
-        });
       }
       return {
         status: "flagged",
