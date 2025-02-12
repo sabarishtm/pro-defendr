@@ -74,7 +74,7 @@ export class ModerationService {
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': process.env.THEHIVE_API_KEY,
+            'Authorization': `Token ${process.env.THEHIVE_API_KEY}`,
             ...formData.getHeaders()
           }
         }
@@ -146,7 +146,7 @@ export class ModerationService {
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': process.env.THEHIVE_API_KEY,
+            'Authorization': `Token ${process.env.THEHIVE_API_KEY}`,
             ...formData.getHeaders()
           }
         }
