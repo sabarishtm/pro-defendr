@@ -135,8 +135,13 @@ export class ModerationService {
   private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
     try {
       const formData = new FormData();
-      formData.append("media", readFileSync(filePath), {
-        filename: path.basename(filePath),
+      const fileBuffer = readFileSync(filePath);
+      const fileName = path.basename(filePath);
+
+      // Use 'image' field name instead of 'media'
+      formData.append("image", fileBuffer, {
+        filename: fileName,
+        contentType: fileName.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'
       });
 
       console.log("Making API request to TheHive for media moderation...");
@@ -217,6 +222,9 @@ export class ModerationService {
       };
     } catch (error) {
       console.error("TheHive API error:", error);
+      if (axios.isAxiosError(error)) {
+        console.error("API Response:", error.response?.data);
+      }
       return {
         status: "flagged",
         regions: [],
@@ -248,7 +256,7 @@ export class ModerationService {
 
       if (content.type === 'text') {
         const textContent = content.content;
-        return service === "thehive" 
+        return service === "thehive"
           ? await this.moderateTextWithHive(textContent)
           : await this.moderateTextWithOpenAI(textContent);
       } else if (content.type === 'image' || content.type === 'video') {
