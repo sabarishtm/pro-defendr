@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { VideoTimeline } from "@/components/VideoTimeline";
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
@@ -28,8 +29,10 @@ export function CaseDetails({
   const [notes, setNotes] = useState(moderationCase?.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaError, setMediaError] = useState(false);
-  const [blurLevel, setBlurLevel] = useState(75); // Initial 75% blur
+  const [blurLevel, setBlurLevel] = useState(75);
   const [isBlurred, setIsBlurred] = useState(true);
+  const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -79,9 +82,7 @@ export function CaseDetails({
   };
 
   const renderContent = () => {
-    const type = contentItem.type?.toLowerCase() || 'text';
-
-    switch (type) {
+    switch (contentItem.type?.toLowerCase() || 'text') {
       case "text":
         return (
           <div className="space-y-4">
@@ -181,6 +182,7 @@ export function CaseDetails({
               <>
                 <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
                   <video
+                    ref={videoRef}
                     src={contentItem.content}
                     controls
                     className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
@@ -190,6 +192,19 @@ export function CaseDetails({
                     Your browser does not support the video tag.
                   </video>
                 </div>
+                {contentItem.metadata.aiAnalysis?.timeline && (
+                  <VideoTimeline
+                    timeline={contentItem.metadata.aiAnalysis.timeline}
+                    videoRef={videoRef}
+                    onTimeSelect={setSelectedTime}
+                  />
+                )}
+                {selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
+                  <TimelineAlert
+                    timeline={contentItem.metadata.aiAnalysis.timeline}
+                    selectedTime={selectedTime}
+                  />
+                )}
                 <div className="space-y-4 pt-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -240,7 +255,7 @@ export function CaseDetails({
             </div>
             <div className="p-6 bg-background border rounded-lg shadow-sm">
               <p className="text-sm text-muted-foreground mb-2">
-                Content type not supported: {type}
+                Content type not supported: {contentItem.type}
               </p>
               <p className="text-lg whitespace-pre-wrap">
                 {contentItem.content}
@@ -374,5 +389,31 @@ export function CaseDetails({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+interface TimelineAlertProps {
+  timeline: ContentItem["metadata"]["aiAnalysis"]["timeline"];
+  selectedTime: number;
+}
+
+function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
+  const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
+  if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
+
+  return (
+    <Alert variant="destructive" className="mt-4">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertDescription>
+        <div className="font-semibold">Content warnings at {selectedTime.toFixed(1)}s:</div>
+        <ul className="list-disc pl-4 mt-2">
+          {Object.entries(timePoint.confidence).map(([type, confidence]) => (
+            <li key={type}>
+              {type}: {(confidence * 100).toFixed(1)}% confidence
+            </li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
   );
 }
