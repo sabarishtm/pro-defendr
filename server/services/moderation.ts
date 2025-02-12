@@ -211,11 +211,36 @@ export class ModerationService {
         });
       }
 
-      // Log final processed scores
-      console.log("Final processed confidence scores:", scores);
-      console.log("Timeline data being returned:", result.timeline);
+      // Construct timeline data from frame analysis
+      const timeline = result.output?.map((frame: any, index: number) => {
+        const frameScores: Record<string, number> = {};
 
-      // Determine status based on scores
+        if (frame.classes) {
+          frame.classes.forEach((item: { class: string; score: number }) => {
+            if (item.score <= 0 || item.class.startsWith('no_')) return;
+
+            const cleanName = item.class
+              .replace(/^yes_/, '')
+              .replace(/_/g, ' ');
+
+            if (item.score > 0.001) {
+              frameScores[cleanName] = item.score;
+            }
+          });
+        }
+
+        // Calculate time based on frame index and assuming 30fps
+        return {
+          time: index / 30, // Convert frame index to seconds
+          confidence: frameScores
+        };
+      }) || [];
+
+      // Log final processed data
+      console.log("Final processed confidence scores:", scores);
+      console.log("Timeline data being returned:", timeline);
+
+      // Determine overall status based on scores
       const maxScore = Math.max(0, ...Object.values(scores));
       const status = maxScore > 0.8 ? "rejected" : maxScore > 0.4 ? "flagged" : "approved";
 
@@ -235,6 +260,7 @@ export class ModerationService {
         status,
         regions,
         aiConfidence: scores,
+        output: timeline
       };
 
     } catch (error) {
