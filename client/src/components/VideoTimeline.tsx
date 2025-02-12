@@ -116,15 +116,6 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                         onError={(e) => {
                           console.error("Failed to load thumbnail:", point.thumbnail);
                           e.currentTarget.style.display = 'none';
-                          // Show fallback
-                          if (videoRef.current) {
-                            const fallbackDiv = document.createElement('div');
-                            fallbackDiv.className = 'w-full h-full';
-                            fallbackDiv.style.background = `url(${videoRef.current.src}#t=${point.time})`;
-                            fallbackDiv.style.backgroundSize = 'cover';
-                            fallbackDiv.style.backgroundPosition = 'center';
-                            e.currentTarget.parentElement?.appendChild(fallbackDiv);
-                          }
                         }}
                       />
                     )}

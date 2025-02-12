@@ -240,7 +240,12 @@ export class ModerationService {
 
       console.log("Timeline processing completed:", {
         timelineLength: timeline.length,
-        firstFrameThumbnail: timeline[0]?.thumbnail
+        firstFrameThumbnail: timeline[0]?.thumbnail,
+        sampleFrames: timeline.slice(0, 2).map(frame => ({
+          time: frame.time,
+          thumbnail: frame.thumbnail,
+          hasConfidence: Object.keys(frame.confidence).length > 0
+        }))
       });
 
       const maxScore = Math.max(0, ...Object.values(scores));
@@ -250,7 +255,11 @@ export class ModerationService {
         status,
         regions: [],
         aiConfidence: scores,
-        output: timeline
+        output: timeline.map(frame => ({
+          time: frame.time,
+          confidence: frame.confidence,
+          thumbnail: frame.thumbnail
+        }))
       };
 
     } catch (error) {
