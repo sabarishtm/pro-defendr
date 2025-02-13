@@ -1,8 +1,26 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { type QueueStats } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface QueueStats {
+  total: number;
+  avgProcessingTime: number;
+  aiAccuracy: number;
+  flaggedContentRatio: number;
+  moderationTrends: Array<{
+    date: string;
+    approved: number;
+    rejected: number;
+    flagged: number;
+  }>;
+  contentTypeDistribution: Array<{
+    type: string;
+    avgProcessingTime: number;
+    count: number;
+  }>;
+}
 
 function StatCard({ title, value, description }: { title: string; value: string | number; description?: string }) {
   return (

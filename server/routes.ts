@@ -196,12 +196,13 @@ export function registerRoutes(app: Express) {
           classification: {
             category: nextItem.type,
             confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
-            suggestedAction: moderationResult.status === "approved" ? "approve" :
-                              moderationResult.status === "rejected" ? "reject" : "review",
+            suggestedAction: (moderationResult.status === "approved" ? "approve" as const :
+                              moderationResult.status === "rejected" ? "reject" as const :
+                              "review" as const),
           },
           contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
             type,
-            severity: severity * 10, // Convert to 0-10 scale
+            severity: severity * 10,
             details: `Content contains ${type} with confidence ${severity}`,
           })),
           riskScore: Math.max(...Object.values(moderationResult.aiConfidence), 0),
@@ -240,7 +241,8 @@ export function registerRoutes(app: Express) {
         metadata: {
           originalMetadata: {},
           ...req.body.metadata
-        }
+        },
+        status: "pending" // Add default status
       });
 
       // Run moderation analysis using TheHive service
@@ -250,7 +252,7 @@ export function registerRoutes(app: Express) {
           category: newContent.type,
           confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
           suggestedAction: moderationResult.status === "approved" ? "approve" as const :
-                          moderationResult.status === "rejected" ? "reject" as const : "review" as const,
+                            moderationResult.status === "rejected" ? "reject" as const : "review" as const,
         },
         contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
           type,
@@ -440,7 +442,8 @@ export function registerRoutes(app: Express) {
             mimetype: req.file.mimetype,
             size: req.file.size
           }
-        }
+        },
+        status: "pending" // Add status
       });
 
       // Run moderation analysis on the new content
@@ -450,7 +453,7 @@ export function registerRoutes(app: Express) {
           category: fileType,
           confidence: Object.values(moderationResult.aiConfidence)[0] || 0,
           suggestedAction: moderationResult.status === "approved" ? "approve" :
-                           moderationResult.status === "rejected" ? "reject" : "review",
+                             moderationResult.status === "rejected" ? "reject" : "review",
         },
         contentFlags: Object.entries(moderationResult.aiConfidence).map(([type, severity]) => ({
           type,
@@ -654,7 +657,8 @@ export function registerRoutes(app: Express) {
           originalMetadata: {
             source: "Test"
           }
-        }
+        },
+        status: "pending" // Add status
       });
 
       res.json(testContent);
@@ -706,6 +710,104 @@ export function registerRoutes(app: Express) {
         return res.status(403).json({ message: error.message });
       }
       res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+
+  // Add this route before the server export
+  app.get("/api/stats", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(401).json({ message: "User not found" });
+
+      const allContent = await storage.getContentItems();
+      const cases = await storage.getCases();
+
+      // Calculate statistics
+      const total = allContent.length;
+      const completedCases = cases.filter(c => c.decision);
+      const avgProcessingTime = completedCases.length ?
+        completedCases.reduce((acc, c) => acc + (c.createdAt.getTime() - new Date(c.createdAt).getTime()), 0) / completedCases.length :
+        0;
+
+      // Calculate AI accuracy by comparing AI suggestions with moderator decisions
+      let correctPredictions = 0;
+      let totalPredictions = 0;
+
+      for (const content of allContent) {
+        const aiSuggestion = content.metadata.aiAnalysis?.classification.suggestedAction;
+        const case_ = cases.find(c => c.contentId === content.id && c.decision);
+
+        if (aiSuggestion && case_) {
+          totalPredictions++;
+          if (
+            (aiSuggestion === 'approve' && case_.decision === 'approved') ||
+            (aiSuggestion === 'reject' && case_.decision === 'rejected')
+          ) {
+            correctPredictions++;
+          }
+        }
+      }
+
+      const aiAccuracy = totalPredictions ? correctPredictions / totalPredictions : 0;
+      const flaggedContent = allContent.filter(item =>
+        item.metadata.aiAnalysis?.contentFlags.some(flag => flag.severity > 7)
+      );
+      const flaggedContentRatio = total ? flaggedContent.length / total : 0;
+
+      // Generate moderation trends (last 7 days)
+      const moderationTrends = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+
+        const daysCases = cases.filter(c =>
+          new Date(c.createdAt).toDateString() === date.toDateString() &&
+          c.decision
+        );
+
+        return {
+          date: date.toISOString().split('T')[0],
+          approved: daysCases.filter(c => c.decision === 'approved').length,
+          rejected: daysCases.filter(c => c.decision === 'rejected').length,
+          flagged: daysCases.filter(c => c.decision === 'review').length,
+        };
+      }).reverse();
+
+      // Calculate content type distribution
+      const contentTypeStats = allContent.reduce((acc, item) => {
+        if (!acc[item.type]) {
+          acc[item.type] = { count: 0, totalTime: 0 };
+        }
+        acc[item.type].count++;
+
+        const itemCase = cases.find(c => c.contentId === item.id && c.decision);
+        if (itemCase) {
+          acc[item.type].totalTime += itemCase.createdAt.getTime() - new Date(itemCase.createdAt).getTime();
+        }
+
+        return acc;
+      }, {} as Record<string, { count: number; totalTime: number; }>);
+
+      const contentTypeDistribution = Object.entries(contentTypeStats).map(([type, stats]) => ({
+        type,
+        avgProcessingTime: stats.count ? stats.totalTime / stats.count : 0,
+        count: stats.count,
+      }));
+
+      res.json({
+        total,
+        avgProcessingTime,
+        aiAccuracy,
+        flaggedContentRatio,
+        moderationTrends,
+        contentTypeDistribution,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ message: "Error fetching statistics" });
     }
   });
 
