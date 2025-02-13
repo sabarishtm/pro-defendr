@@ -63,6 +63,33 @@ export type Settings = typeof settings.$inferSelect;
 export type InsertSettings = z.infer<typeof insertSettingsSchema>;
 
 
+// Add Content Status enum before the contentItems definition
+export const ContentStatus = {
+  PENDING_MODERATION: "pending_moderation",
+  REJECTED: "rejected",
+  APPROVED: "approved",
+  SECONDARY_REVIEW: "secondary_review",
+} as const;
+
+export type ContentStatus = typeof ContentStatus[keyof typeof ContentStatus];
+
+// Update contentItems table definition
+export const contentItems = pgTable("content_items", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // text, image, video
+  status: text("status", { enum: Object.values(ContentStatus) })
+    .notNull()
+    .default(ContentStatus.PENDING_MODERATION),
+  priority: integer("priority").notNull().default(1),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  metadata: jsonb("metadata").notNull().$type<{
+    aiAnalysis?: AIAnalysis;
+    originalMetadata: Record<string, unknown>;
+  }>(),
+});
+
 // Role and Permission Types
 export const UserRole = {
   AGENT: "agent",
@@ -122,21 +149,6 @@ export const teams = pgTable("teams", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at"),
   managerId: integer("manager_id").references(() => users.id),
-});
-
-// Content Types
-export const contentItems = pgTable("content_items", {
-  id: serial("id").primaryKey(),
-  content: text("content").notNull(),
-  type: text("type").notNull(), // text, image, video
-  status: text("status").notNull().default("pending"), // pending, approved, rejected
-  priority: integer("priority").notNull().default(1),
-  assignedTo: integer("assigned_to").references(() => users.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  metadata: jsonb("metadata").notNull().$type<{
-    aiAnalysis?: AIAnalysis;
-    originalMetadata: Record<string, unknown>;
-  }>(),
 });
 
 // Moderation Case Types

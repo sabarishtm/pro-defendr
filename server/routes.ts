@@ -2,7 +2,7 @@ import { Express, Request, Response } from "express";
 import express from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { loginSchema, insertCaseSchema, decisionSchema, Permission, UserRole, settings } from "@shared/schema";
+import { loginSchema, insertCaseSchema, decisionSchema, Permission, UserRole, settings, ContentStatus } from "@shared/schema";
 import session from "express-session";
 import MemoryStore from "memorystore";
 import multer from "multer";
@@ -124,8 +124,8 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Content not found" });
       }
 
-      // If content is pending and not assigned, assign it to the current user
-      if (item.status === "pending" && !item.assignedTo) {
+      // Auto-assign unassigned pending items
+      if (item.status === ContentStatus.PENDING_MODERATION && !item.assignedTo) {
         // Create a new case or get existing one
         const cases = await storage.getCases();
         const existingCase = cases.find(c =>
@@ -152,6 +152,16 @@ export function registerRoutes(app: Express) {
         // Refresh item data after assignment
         const updatedItem = await storage.getContentItemWithAssignedUser(contentId);
         return res.json(updatedItem);
+      }
+
+      // Check permissions for Secondary Review items
+      if (item.status === ContentStatus.SECONDARY_REVIEW) {
+        const user = await storage.getUser(userId);
+        if (!user || user.role === UserRole.AGENT) {
+          return res.status(403).json({
+            message: "Only Senior Agents can access items in Secondary Review"
+          });
+        }
       }
 
       res.json(item);
@@ -242,7 +252,7 @@ export function registerRoutes(app: Express) {
           originalMetadata: {},
           ...req.body.metadata
         },
-        status: "pending" // Add default status
+        status: ContentStatus.PENDING_MODERATION
       });
 
       // Run moderation analysis using TheHive service
@@ -345,20 +355,19 @@ export function registerRoutes(app: Express) {
 
       const data = decisionSchema.parse(req.body);
 
-      // Additional check for review decisions
+      // Check permissions for Secondary Review decisions
       if (data.decision === "review" && user.role === UserRole.AGENT) {
         return res.status(403).json({
-          message: "Only Sr. Agents and above can send items for review"
+          message: "Only Sr. Agents and above can send items for Secondary Review"
         });
       }
 
       // Find or create case
       const cases = await storage.getCases();
-
       const existingCase = cases.find(c =>
         c.contentId === data.contentId &&
         c.agentId === userId &&
-        !c.decision // Only consider undecided cases
+        !c.decision
       );
 
       let updatedCase;
@@ -379,12 +388,14 @@ export function registerRoutes(app: Express) {
         });
       }
 
-      // Update content item status to match the decision
-      const contentStatus =
-        data.decision === "approve" ? "approved" :
-          data.decision === "reject" ? "rejected" :
-            "pending"; // For review decision, keep it as pending
+      // Map decision to content status
+      const contentStatus = {
+        approve: ContentStatus.APPROVED,
+        reject: ContentStatus.REJECTED,
+        review: ContentStatus.SECONDARY_REVIEW
+      }[data.decision];
 
+      // Update content item status
       await storage.updateContentItem(data.contentId, {
         status: contentStatus,
         assignedTo: data.decision === "review" ? null : null, // Release assignment after decision
