@@ -74,12 +74,17 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     queryKey: ["/api/users/me"],
   });
 
-  // Load persisted state from localStorage
+  // Update the loadPersistedState function
   const loadPersistedState = () => {
     try {
-      const savedTab = localStorage.getItem('content-queue-tab') || 'my-queue';
+      // Default to 'my-queue' when no tab is saved
+      const savedTab = localStorage.getItem('content-queue-tab');
+      // If savedTab is null (first time), use 'my-queue'
+      const activeTab = savedTab !== null ? savedTab : 'my-queue';
+      localStorage.setItem('content-queue-tab', activeTab); // Save default if not exists
+
       const savedFilters = JSON.parse(localStorage.getItem('content-queue-filters') || '{}');
-      return { savedTab, savedFilters };
+      return { savedTab: activeTab, savedFilters };
     } catch (error) {
       console.error('Error loading persisted state:', error);
       return { savedTab: 'my-queue', savedFilters: {} };
