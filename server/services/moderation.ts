@@ -32,7 +32,7 @@ export class ModerationService {
 
   private async generateThumbnail(videoPath: string, timeInSeconds: number, outputPath: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      console.log(`Generating thumbnail at ${timeInSeconds}s for video: ${videoPath}`);
+      console.log(`Generating thumbnail at ${timeInSeconds.toFixed(2)}s for video: ${videoPath}`);
       console.log(`Output path: ${outputPath}`);
 
       ffmpeg(videoPath)
@@ -43,13 +43,13 @@ export class ModerationService {
           size: '320x240'
         })
         .on('end', () => {
-          console.log(`Successfully generated thumbnail at ${timeInSeconds}s:`, outputPath);
+          console.log(`Successfully generated thumbnail at ${timeInSeconds.toFixed(2)}s:`, outputPath);
           const publicPath = `/uploads/thumbnails/${path.basename(outputPath)}`;
           console.log(`Public URL for thumbnail: ${publicPath}`);
           resolve(publicPath);
         })
         .on('error', (err) => {
-          console.error(`Error generating thumbnail at ${timeInSeconds}s:`, err);
+          console.error(`Error generating thumbnail at ${timeInSeconds.toFixed(2)}s:`, err);
           reject(err);
         });
     });
@@ -177,6 +177,12 @@ export class ModerationService {
           });
         });
 
+        // Ensure thumbnails directory exists
+        const thumbnailsDir = path.join(process.cwd(), 'uploads', 'thumbnails');
+        if (!existsSync(thumbnailsDir)) {
+          mkdirSync(thumbnailsDir, { recursive: true });
+        }
+
         // Process the output array from the API response
         const outputs = response.data.status[0].response.output;
         console.log("Processing API output array, entries:", outputs.length);
@@ -203,16 +209,16 @@ export class ModerationService {
           const thumbnailPath = path.join(process.cwd(), 'uploads', 'thumbnails', thumbnailFileName);
 
           try {
-            await this.generateThumbnail(filePath, time, thumbnailPath);
-            console.log(`Generated thumbnail for timestamp ${time}:`, thumbnailPath);
+            const thumbnailUrl = await this.generateThumbnail(filePath, time, thumbnailPath);
+            console.log(`Generated thumbnail for timestamp ${time.toFixed(2)}:`, thumbnailPath);
+            videoOutput.push({
+              time,
+              confidence,
+              thumbnail: thumbnailUrl
+            });
           } catch (err) {
-            console.error(`Failed to generate thumbnail for timestamp ${time}:`, err);
+            console.error(`Failed to generate thumbnail for timestamp ${time.toFixed(2)}:`, err);
           }
-
-          videoOutput.push({
-            time,
-            confidence
-          });
         }
 
         // Sort timestamps chronologically
