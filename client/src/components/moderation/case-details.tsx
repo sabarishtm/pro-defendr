@@ -64,6 +64,15 @@ interface CaseDetailsProps {
   onComplete: () => void;
 }
 
+const getContentName = (item: ContentItem) => {
+    if (item.type === "text") {
+      return item.content.slice(0, 50) + (item.content.length > 50 ? "..." : "");
+    }
+    // For image/video, get filename without extension and path
+    const fileName = item.content.split('/').pop() || '';
+    return fileName.split('.')[0].replace(/-/g, ' ');
+  };
+
 export function CaseDetails({
   contentItem,
   moderationCase,
@@ -131,7 +140,7 @@ export function CaseDetails({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-muted-foreground" />
-              <span className="text-base font-medium">Text Content</span>
+              <span className="text-base font-medium">{getContentName(contentItem)}</span>
             </div>
             <div className="p-6 bg-background border rounded-lg shadow-sm">
               <p className="whitespace-pre-wrap text-lg leading-relaxed">
@@ -146,7 +155,7 @@ export function CaseDetails({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5 text-muted-foreground" />
-              <span className="text-base font-medium">Image Content</span>
+              <span className="text-base font-medium">{getContentName(contentItem)}</span>
             </div>
             {mediaError ? (
               <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
@@ -218,7 +227,7 @@ export function CaseDetails({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Video className="h-5 w-5 text-muted-foreground" />
-              <span className="text-base font-medium">Video Content</span>
+              <span className="text-base font-medium">{getContentName(contentItem)}</span>
             </div>
             {mediaError ? (
               <div className="flex items-center justify-center h-[400px] bg-muted rounded-lg">
@@ -306,7 +315,7 @@ export function CaseDetails({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-              <span className="text-base font-medium">Unknown Content Type</span>
+              <span className="text-base font-medium">Unknown Content: {getContentName(contentItem)}</span>
             </div>
             <div className="p-6 bg-background border rounded-lg shadow-sm">
               <p className="text-sm text-muted-foreground mb-2">
