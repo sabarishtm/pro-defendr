@@ -16,47 +16,47 @@ import { Switch } from "@/components/ui/switch";
 import { VideoTimeline } from "@/components/VideoTimeline";
 
 const getVariantForScore = (score: number): "destructive" | "secondary" | "outline" => {
-  if (score > 0.6) return "destructive";     // Red for > 60%
-  if (score >= 0.1) return "secondary";      // Amber for 10-60%
-  return "outline";                          // Grey for < 10%
-};
+    if (score > 0.6) return "destructive";     // Red for > 60%
+    if (score >= 0.1) return "secondary";      // Amber for 10-60%
+    return "outline";                          // Grey for < 10%
+  };
+
+  interface TimelineAlertProps {
+    timeline: ContentItem["metadata"]["aiAnalysis"]["timeline"];
+    selectedTime: number;
+  }
+
+  function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
+    const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
+    if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
+
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-muted-foreground">
+          Content Warnings at {selectedTime.toFixed(1)}s
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(timePoint.confidence)
+            .filter(([_, confidence]) => confidence > 0.001)  // Filter out effectively zero scores
+            .sort(([_, a], [__, b]) => b - a)  // Sort by confidence in descending order
+            .map(([type, confidence]) => (
+              <Badge
+                key={type}
+                variant={getVariantForScore(confidence)}
+                className="text-xs"
+              >
+                {type.replace(/_/g, ' ')} ({(confidence * 100).toFixed(1)}%)
+              </Badge>
+            ))}
+        </div>
+      </div>
+    );
+  }
 
 interface CaseDetailsProps {
   contentItem: ContentItem;
   moderationCase: ModerationCase | undefined;
   onComplete: () => void;
-}
-
-interface TimelineAlertProps {
-  timeline: ContentItem["metadata"]["aiAnalysis"]["timeline"];
-  selectedTime: number;
-}
-
-function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
-  const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
-  if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
-
-  return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground">
-        Content Warnings at {selectedTime.toFixed(1)}s
-      </h3>
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(timePoint.confidence)
-          .filter(([_, confidence]) => confidence > 0.001)  // Filter out effectively zero scores
-          .sort(([_, a], [__, b]) => b - a)  // Sort by confidence in descending order
-          .map(([type, confidence]) => (
-            <Badge
-              key={type}
-              variant={getVariantForScore(confidence)}
-              className="text-xs"
-            >
-              {type.replace(/_/g, ' ')} ({(confidence * 100).toFixed(1)}%)
-            </Badge>
-          ))}
-      </div>
-    </div>
-  );
 }
 
 export function CaseDetails({
@@ -365,7 +365,7 @@ export function CaseDetails({
                             variant={getVariantForScore(flag.severity)}
                             className="text-xs"
                           >
-                            {flag.type} ({Math.round(flag.severity * 100)}%)
+                            {flag.type} ({(flag.severity * 100).toFixed(1)}%)
                           </Badge>
                         ))}
                     </div>
