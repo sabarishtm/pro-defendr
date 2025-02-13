@@ -345,13 +345,13 @@ export function CaseDetails({
               </div>
 
               <div className="grid gap-4">
-                {contentItem.metadata.aiAnalysis.contentFlags?.length > 0 && (
+                {contentItem.metadata.aiAnalysis.contentFlags?.length > 0 && selectedTime === null && (
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium text-muted-foreground">Content Warnings</h3>
                     <div className="flex flex-wrap gap-2">
                       {contentItem.metadata.aiAnalysis.contentFlags.map((flag, index) => (
                         <Badge key={index} variant="destructive" className="text-xs">
-                          {flag.type} (Severity: {flag.severity})
+                          {flag.type} ({Math.round(flag.severity * 10)}%)
                         </Badge>
                       ))}
                     </div>
