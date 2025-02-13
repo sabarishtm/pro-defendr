@@ -609,17 +609,18 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         </CardContent>
       </Card>
 
+      {/* Tabs Section */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsList className="h-10 w-fit p-1">
           <TabsTrigger
             value="my-queue"
-            className="text-2xl font-bold py-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200"
+            className="text-base font-semibold px-4 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             My Queue
           </TabsTrigger>
           <TabsTrigger
             value="team-queue"
-            className="text-2xl font-bold py-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200"
+            className="text-base font-semibold px-4 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             Team Queue
           </TabsTrigger>
