@@ -501,6 +501,27 @@ export function registerRoutes(app: Express) {
     }
 
     // Delete thumbnails if they exist
+    // First check in the metadata.aiAnalysis.timeline for thumbnails
+    if (content.metadata?.aiAnalysis?.timeline) {
+      try {
+        const timeline = content.metadata.aiAnalysis.timeline;
+        for (const frame of timeline) {
+          if (frame.thumbnail && frame.thumbnail.startsWith('/uploads/')) {
+            const thumbnailPath = path.join(basePath, frame.thumbnail.slice(1));
+            try {
+              await fs.promises.unlink(thumbnailPath);
+              console.log(`Deleted timeline thumbnail: ${thumbnailPath}`);
+            } catch (error) {
+              console.error(`Error deleting timeline thumbnail ${thumbnailPath}:`, error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error cleaning up timeline thumbnails:", error);
+      }
+    }
+
+    // Also check legacy videoThumbnails field
     if (content.metadata?.videoThumbnails) {
       try {
         const thumbnails = JSON.parse(content.metadata.videoThumbnails as string);
@@ -517,6 +538,28 @@ export function registerRoutes(app: Express) {
         }
       } catch (error) {
         console.error("Error parsing video thumbnails:", error);
+      }
+    }
+
+    // Cleanup the thumbnails directory if it exists
+    const thumbnailsDir = path.join(basePath, 'uploads', 'thumbnails');
+    try {
+      const files = await fs.promises.readdir(thumbnailsDir);
+      for (const file of files) {
+        if (file.startsWith('thumb_')) {
+          const thumbnailPath = path.join(thumbnailsDir, file);
+          try {
+            await fs.promises.unlink(thumbnailPath);
+            console.log(`Deleted thumbnail from directory: ${thumbnailPath}`);
+          } catch (error) {
+            console.error(`Error deleting thumbnail ${thumbnailPath}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      // Ignore if thumbnails directory doesn't exist
+      if (error.code !== 'ENOENT') {
+        console.error("Error cleaning thumbnails directory:", error);
       }
     }
   }
