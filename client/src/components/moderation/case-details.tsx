@@ -39,8 +39,8 @@ function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
         {Object.entries(timePoint.confidence)
           .sort(([_, a], [__, b]) => b - a)
           .map(([type, confidence]) => (
-            <Badge 
-              key={type} 
+            <Badge
+              key={type}
               variant={confidence > 0.5 ? "destructive" : "secondary"}
               className="text-xs"
             >
@@ -242,6 +242,8 @@ export function CaseDetails({
                       timeline={contentItem.metadata.aiAnalysis.timeline}
                       videoRef={videoRef}
                       onTimeSelect={setSelectedTime}
+                      isBlurred={isBlurred}
+                      blurLevel={blurLevel}
                     />
                   </div>
                 )}

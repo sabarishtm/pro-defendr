@@ -9,9 +9,17 @@ interface VideoTimelineProps {
   timeline: VideoOutput[];
   videoRef: React.RefObject<HTMLVideoElement>;
   onTimeSelect: (time: number) => void;
+  isBlurred?: boolean;
+  blurLevel?: number;
 }
 
-export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelineProps) => {
+export const VideoTimeline = ({ 
+  timeline, 
+  videoRef, 
+  onTimeSelect,
+  isBlurred = false,
+  blurLevel = 75
+}: VideoTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,6 +36,14 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
     console.log("No timeline data available");
     return null;
   }
+
+  const getBlurStyle = () => {
+    if (!isBlurred) return {};
+    return {
+      filter: `blur(${Math.max(2, Math.round(blurLevel / 10))}px)`,
+      transition: 'filter 0.3s ease-in-out'
+    };
+  };
 
   console.log("Rendering timeline with", timeline.length, "points");
 
@@ -88,6 +104,7 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                         src={point.thumbnail}
                         alt={`Timeline thumbnail at ${point.time}s`}
                         className="w-full h-full object-cover"
+                        style={getBlurStyle()}
                         onError={(e) => {
                           console.error("Failed to load thumbnail:", point.thumbnail);
                           e.currentTarget.style.display = 'none';
