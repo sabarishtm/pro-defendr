@@ -188,7 +188,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     switch (item.type.toLowerCase()) {
       case 'image':
         return (
-          <div className="relative w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted">
+          <div className="relative w-[80px] h-[45px] rounded overflow-hidden bg-muted">
             <img
               src={item.content}
               alt="Thumbnail"
@@ -199,13 +199,13 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
               }}
             />
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <ImageIcon className="w-6 h-6 text-white" />
+              <ImageIcon className="w-4 h-4 text-white" />
             </div>
           </div>
         );
       case 'video':
         return (
-          <div className="relative w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted">
+          <div className="relative w-[80px] h-[45px] rounded overflow-hidden bg-muted">
             {item.metadata.aiAnalysis?.timeline?.[0]?.thumbnail ? (
               <>
                 <img
@@ -218,20 +218,20 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                   }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <Video className="w-6 h-6 text-white" />
+                  <Video className="w-4 h-4 text-white" />
                 </div>
               </>
             ) : (
               <div className="fallback-icon hidden absolute inset-0 flex items-center justify-center">
-                <Video className="w-8 h-8 text-muted-foreground" />
+                <Video className="w-4 h-4 text-muted-foreground" />
               </div>
             )}
           </div>
         );
       default:
         return (
-          <div className="w-[120px] h-[80px] rounded-lg flex items-center justify-center bg-muted">
-            <FileText className="w-8 h-8 text-muted-foreground" />
+          <div className="w-[80px] h-[45px] rounded flex items-center justify-center bg-muted">
+            <FileText className="w-4 h-4 text-muted-foreground" />
           </div>
         );
     }
@@ -435,129 +435,179 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         <CardContent>
           <div className="space-y-4">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[140px]">Preview</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead onClick={() => toggleSort("type")} className="cursor-pointer">
-                    Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </TableHead>
-                  <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer">
-                    Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </TableHead>
-                  <TableHead onClick={() => toggleSort("status")} className="cursor-pointer">
-                    Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </TableHead>
-                  <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer">
-                    Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
-                  </TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead className="w-[120px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedItems.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    className="group cursor-pointer hover:bg-muted/50"
-                    onClick={() => onOpenModeration?.(item)}
-                  >
-                    <TableCell className="p-2">
-                      {renderThumbnail(item)}
-                    </TableCell>
-                    <TableCell className="max-w-[400px] truncate font-medium">
-                      {getDisplayName(item)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{item.type}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={item.priority > 1 ? "destructive" : "secondary"}>
-                        {item.priority === 1 ? "Low" : "High"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[100px] py-2">Preview</TableHead>
+                <TableHead className="py-2">Title</TableHead>
+                <TableHead onClick={() => toggleSort("type")} className="cursor-pointer py-2">
+                  Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer py-2">
+                  Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("status")} className="cursor-pointer py-2">
+                  Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer py-2">
+                  Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead className="py-2">Assigned To</TableHead>
+                <TableHead className="w-[100px] py-2">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedItems.map((item) => (
+                <TableRow
+                  key={item.id}
+                  className="group cursor-pointer hover:bg-muted/50"
+                  onClick={() => onOpenModeration?.(item)}
+                >
+                  <TableCell className="py-1 px-2">
+                    <div className="relative w-[80px] h-[45px] rounded overflow-hidden bg-muted">
+                      {item.type.toLowerCase() === 'image' && (
+                        <>
+                          <img
+                            src={item.content}
+                            alt="Thumbnail"
+                            className="w-full h-full object-contain blur-sm group-hover:blur-0 transition-all duration-500"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                            <ImageIcon className="w-4 h-4 text-white" />
+                          </div>
+                        </>
+                      )}
+                      {item.type.toLowerCase() === 'video' && (
+                        <>
+                          {item.metadata.aiAnalysis?.timeline?.[0]?.thumbnail ? (
+                            <>
+                              <img
+                                src={item.metadata.aiAnalysis.timeline[0].thumbnail}
+                                alt="Video thumbnail"
+                                className="w-full h-full object-contain blur-sm group-hover:blur-0 transition-all duration-500"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <Video className="w-4 h-4 text-white" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="fallback-icon absolute inset-0 flex items-center justify-center">
+                              <Video className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                      {item.type.toLowerCase() === 'text' && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FileText className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-1 font-medium">
+                    <div className="truncate max-w-[200px] text-sm">{getDisplayName(item)}</div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <Badge variant="outline" className="text-xs">{item.type}</Badge>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <Badge variant={item.priority > 1 ? "destructive" : "secondary"} className="text-xs">
+                      {item.priority === 1 ? "Low" : "High"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <Badge
+                      variant={
                         item.status === "approved"
                           ? "secondary"
                           : item.status === "rejected"
                           ? "destructive"
                           : "outline"
-                      }>
-                        {item.status}
+                      }
+                      className="text-xs"
+                    >
+                      {item.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-1 text-sm">
+                    {item.createdAt ? (
+                      format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
+                    ) : (
+                      "Unknown"
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1">
+                    {item.assignedUserName ? (
+                      <Badge variant="outline" className="bg-muted text-xs">
+                        {item.assignedUserName}
                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {item.createdAt ? (
-                        format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
-                      ) : (
-                        "Unknown"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {item.assignedUserName ? (
-                        <Badge variant="outline" className="bg-muted">
-                          {item.assignedUserName}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Unassigned</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOpenModeration?.(item);
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Unassigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenModeration?.(item);
+                        }}
+                      >
+                        <Eye className="w-3 h-3" />
+                      </Button>
 
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-destructive hover:text-destructive"
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Content</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this content? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
                               onClick={(e) => {
                                 e.stopPropagation();
+                                deleteMutation.mutate(item.id);
                               }}
+                              className="bg-destructive hover:bg-destructive/90"
                             >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Content</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this content? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                                Cancel
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteMutation.mutate(item.id);
-                                }}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
