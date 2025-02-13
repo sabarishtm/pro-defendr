@@ -574,36 +574,41 @@ export function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid content ID" });
       }
 
-      // Get content before deletion to access file paths
+      // Get content and user info
       const content = await storage.getContentItem(contentId);
       if (!content) {
         return res.status(404).json({ message: "Content not found" });
       }
 
-      // Check for existing cases
-      const cases = await storage.getCases();
-      const contentCases = cases.filter(c => c.contentId === contentId);
-      const pendingCasesFromOthers = contentCases.filter(c =>
-        c.decision === null && c.agentId !== userId
-      );
-
-      let errorMessage = "";
-
-      // If there are pending cases from other moderators, block deletion
-      if (pendingCasesFromOthers.length > 0) {
-        errorMessage = "Content has pending moderation cases from other moderators";
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
       }
 
-      // If content is being actively moderated by someone else, include moderator information
-      if (content.status === "pending" && content.assignedTo && content.assignedTo !== userId) {
-        const moderator = await storage.getUser(content.assignedTo);
-        errorMessage = moderator
-          ? `Content is currently being moderated by ${moderator.name}`
-          : "Content is currently being moderated by another user";
-      }
+      // Only check for pending cases if user is not an admin
+      if (user.role !== "admin") {
+        // Check for existing cases
+        const cases = await storage.getCases();
+        const contentCases = cases.filter(c => c.contentId === contentId);
+        const pendingCasesFromOthers = contentCases.filter(c =>
+          c.decision === null && c.agentId !== userId
+        );
 
-      if (errorMessage) {
-        return res.status(400).json({ message: errorMessage });
+        // If there are pending cases from other moderators, block deletion
+        if (pendingCasesFromOthers.length > 0) {
+          return res.status(400).json({
+            message: "Content has pending moderation cases from other moderators"
+          });
+        }
+
+        // If content is being actively moderated by someone else, include moderator information
+        if (content.status === "pending" && content.assignedTo && content.assignedTo !== userId) {
+          const moderator = await storage.getUser(content.assignedTo);
+          const errorMessage = moderator
+            ? `Content is currently being moderated by ${moderator.name}`
+            : "Content is currently being moderated by another user";
+          return res.status(400).json({ message: errorMessage });
+        }
       }
 
       // Clean up all associated files
