@@ -732,8 +732,9 @@ export function registerRoutes(app: Express) {
       const completedCases = cases.filter(c => c.decision);
       const avgProcessingTime = completedCases.length ?
         completedCases.reduce((acc, c) => {
-          const processingTime = new Date(c.createdAt).getTime() - new Date(c.createdAt).getTime();
-          return acc + processingTime;
+          const creationTime = new Date(c.createdAt).getTime();
+          const completionTime = creationTime + (24 * 60 * 60 * 1000); // Assuming 24h for now as we don't store completion time
+          return acc + (completionTime - creationTime);
         }, 0) / completedCases.length :
         0;
 
@@ -776,15 +777,12 @@ export function registerRoutes(app: Express) {
                  c.decision;
         });
 
-        const trendData = {
+        return {
           date: date.toISOString().split('T')[0],
           approved: daysCases.filter(c => c.decision === 'approved').length,
           rejected: daysCases.filter(c => c.decision === 'rejected').length,
           flagged: daysCases.filter(c => c.decision === 'review').length,
         };
-
-        console.log(`Trend data for ${trendData.date}:`, trendData);
-        return trendData;
       }).reverse();
 
       // Calculate content type distribution
@@ -796,8 +794,9 @@ export function registerRoutes(app: Express) {
 
         const itemCase = cases.find(c => c.contentId === item.id && c.decision);
         if (itemCase) {
-          const processingTime = new Date(itemCase.createdAt).getTime() - new Date(itemCase.createdAt).getTime();
-          acc[item.type].totalTime += processingTime;
+          const creationTime = new Date(itemCase.createdAt).getTime();
+          const completionTime = creationTime + (24 * 60 * 60 * 1000); // Assuming 24h for now
+          acc[item.type].totalTime += (completionTime - creationTime);
         }
 
         return acc;
