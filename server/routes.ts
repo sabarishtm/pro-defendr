@@ -355,13 +355,6 @@ export function registerRoutes(app: Express) {
 
       const data = decisionSchema.parse(req.body);
 
-      // Check permissions for Secondary Review decisions
-      if (data.decision === "review" && user.role === UserRole.AGENT) {
-        return res.status(403).json({
-          message: "Only Sr. Agents and above can send items for Secondary Review"
-        });
-      }
-
       // Find or create case
       const cases = await storage.getCases();
       const existingCase = cases.find(c =>
