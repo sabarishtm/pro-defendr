@@ -483,7 +483,44 @@ export function registerRoutes(app: Express) {
   // Serve uploaded files
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-  // Add delete route before the server export
+  // Helper function to delete media files and thumbnails
+  async function cleanupMediaFiles(content: any) {
+    if (!content.content.startsWith('/uploads/')) {
+      return; // Not a file-based content
+    }
+
+    const basePath = path.join(process.cwd());
+
+    // Delete main media file
+    const filePath = path.join(basePath, content.content.slice(1));
+    try {
+      await fs.promises.unlink(filePath);
+      console.log(`Deleted main file: ${filePath}`);
+    } catch (error) {
+      console.error(`Error deleting main file ${filePath}:`, error);
+    }
+
+    // Delete thumbnails if they exist
+    if (content.metadata?.videoThumbnails) {
+      try {
+        const thumbnails = JSON.parse(content.metadata.videoThumbnails as string);
+        for (const thumbnail of thumbnails) {
+          if (typeof thumbnail === 'string' && thumbnail.startsWith('/uploads/')) {
+            const thumbnailPath = path.join(basePath, thumbnail.slice(1));
+            try {
+              await fs.promises.unlink(thumbnailPath);
+              console.log(`Deleted thumbnail: ${thumbnailPath}`);
+            } catch (error) {
+              console.error(`Error deleting thumbnail ${thumbnailPath}:`, error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing video thumbnails:", error);
+      }
+    }
+  }
+
   app.delete("/api/content/:id", async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -494,8 +531,9 @@ export function registerRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid content ID" });
       }
 
-      const item = await storage.getContentItem(contentId);
-      if (!item) {
+      // Get content before deletion to access file paths
+      const content = await storage.getContentItem(contentId);
+      if (!content) {
         return res.status(404).json({ message: "Content not found" });
       }
 
@@ -514,8 +552,8 @@ export function registerRoutes(app: Express) {
       }
 
       // If content is being actively moderated by someone else, include moderator information
-      if (item.status === "pending" && item.assignedTo && item.assignedTo !== userId) {
-        const moderator = await storage.getUser(item.assignedTo);
+      if (content.status === "pending" && content.assignedTo && content.assignedTo !== userId) {
+        const moderator = await storage.getUser(content.assignedTo);
         errorMessage = moderator
           ? `Content is currently being moderated by ${moderator.name}`
           : "Content is currently being moderated by another user";
@@ -525,22 +563,76 @@ export function registerRoutes(app: Express) {
         return res.status(400).json({ message: errorMessage });
       }
 
-      // If it's a media file, delete it from the uploads directory
-      if ((item.type === 'image' || item.type === 'video') && item.content.startsWith('/uploads/')) {
-        const filePath = path.join(process.cwd(), item.content);
-        try {
-          await fs.promises.unlink(filePath);
-        } catch (error) {
-          console.error("Error deleting file:", error);
-          // Continue with content deletion even if file deletion fails
-        }
-      }
+      // Clean up all associated files
+      await cleanupMediaFiles(content);
 
+      // Delete from database
       await storage.deleteContentItem(contentId);
       res.json({ message: "Content deleted successfully" });
     } catch (error) {
       console.error("Error deleting content:", error);
       res.status(500).json({ message: "Error deleting content" });
+    }
+  });
+
+  app.post("/api/content/bulk-delete", async (req: Request, res: Response) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids)) {
+        return res.status(400).json({ message: "Invalid request: ids must be an array" });
+      }
+
+      const results = {
+        success: [] as number[],
+        failed: [] as { id: number; reason: string }[]
+      };
+
+      for (const id of ids) {
+        try {
+          const content = await storage.getContentItem(id);
+          if (!content) {
+            results.failed.push({ id, reason: "Content not found" });
+            continue;
+          }
+
+          // Check if content is being moderated
+          if (content.status === "pending" && content.assignedTo && content.assignedTo !== userId) {
+            const moderator = await storage.getUser(content.assignedTo);
+            results.failed.push({
+              id,
+              reason: moderator
+                ? `Currently being moderated by ${moderator.name}`
+                : "Currently being moderated by another user"
+            });
+            continue;
+          }
+
+          // Clean up all associated files
+          await cleanupMediaFiles(content);
+
+          // Delete from database
+          await storage.deleteContentItem(id);
+          results.success.push(id);
+        } catch (error) {
+          console.error(`Error deleting content ${id}:`, error);
+          results.failed.push({
+            id,
+            reason: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      res.status(200).json({
+        message: "Bulk delete operation completed",
+        results
+      });
+    } catch (error) {
+      console.error("Bulk delete error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
