@@ -6,6 +6,7 @@ import path from "path";
 import { storage } from "../storage";
 import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
+import { spawn } from "child_process";
 
 interface ModerationResult {
   status: ContentItem["status"];
@@ -164,88 +165,152 @@ export class ModerationService {
     }
   }
 
-  private async moderateMediaWithHive(filePath: string): Promise<ModerationResult> {
+  private async moderateImage(filePath: string): Promise<ModerationResult> {
     try {
-      console.log("Starting media moderation with TheHive...");
-      console.log("File path:", filePath);
+      const formData = new FormData();
+      formData.append("image", readFileSync(filePath), {
+        filename: path.basename(filePath),
+        contentType: 'image/jpeg'
+      });
 
-      const baseUrl = 'https://90a7bc36-1960-416f-8911-a669ed15767d-00-f6vtlt7qb0g1.riker.replit.dev';
-      const publicUrl = `${baseUrl}/uploads/${path.basename(filePath)}`;
-      console.log("Media public URL:", publicUrl);
+      const apiKey = process.env.THEHIVE_API_KEY?.startsWith('token ')
+        ? process.env.THEHIVE_API_KEY
+        : `token ${process.env.THEHIVE_API_KEY}`;
 
+      console.log("Making API request to TheHive for image/video moderation...");
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
-        { url: publicUrl },
+        formData,
         {
           headers: {
-            'accept': 'application/json',
-            'authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ'
+            'Accept': 'application/json',
+            'Authorization': apiKey,
+            ...formData.getHeaders()
           }
         }
       );
 
-      console.log("TheHive API Response structure:", {
-        hasStatus: !!response.data.status,
-        responseLength: response.data.status?.length,
-        firstResponseStatus: response.data.status?.[0]?.status,
-        hasTimeline: !!response.data.status?.[0]?.response?.timeline,
-        timelineLength: response.data.status?.[0]?.response?.timeline?.length
-      });
+      console.log("Complete TheHive API Response:", JSON.stringify(response.data, null, 2));
 
-      const result = response.data.status[0].response;
-      const scores: Record<string, number> = {};
+      const videoOutput: VideoOutput[] = [];
+      try {
+        // Get video duration using ffprobe
+        const ffprobeProcess = spawn('ffprobe', [
+          '-v', 'error',
+          '-show_entries', 'format=duration',
+          '-of', 'default=noprint_wrappers=1:nokey=1',
+          filePath
+        ]);
 
-      // Process scores...
+        let duration = 0;
+        let ffprobeOutput = '';
 
-      // Generate thumbnails and construct timeline data
-      console.log("Starting thumbnail generation for timeline frames...");
-      const timeline = await Promise.all((result.output || []).map(async (frame: any, index: number) => {
-        const frameScores: Record<string, number> = {};
-        const timeInSeconds = index / 30; // Assuming 30fps
+        await new Promise<void>((resolve, reject) => {
+          ffprobeProcess.stdout.on('data', (data) => {
+            ffprobeOutput += data.toString();
+          });
 
-        // Process frame scores...
-        if (frame.classes) {
-          frame.classes.forEach((item: { class: string; score: number }) => {
-            if (item.score <= 0 || item.class.startsWith('no_')) return;
-            const cleanName = item.class.replace(/^yes_/, '').replace(/_/g, ' ');
-            if (item.score > 0.001) {
-              frameScores[cleanName] = item.score;
+          ffprobeProcess.on('close', (code) => {
+            if (code === 0) {
+              duration = parseFloat(ffprobeOutput.trim());
+              console.log("Video duration:", duration, "seconds");
+              resolve();
+            } else {
+              console.error("ffprobe failed with code:", code);
+              reject(new Error(`ffprobe failed with code ${code}`));
             }
           });
-        }
+        });
 
-        // Generate thumbnail for this frame
-        const thumbnailFileName = `${path.parse(path.basename(filePath)).name}_${index}.jpg`;
-        const thumbnailPath = path.join('uploads', 'thumbnails', thumbnailFileName);
-        let thumbnailUrl;
+        const timelineData = response.data.status[0].response.timeline || [];
+        const defaultInterval = Math.max(1, Math.floor(duration / 10)); // Ensure at least 1 second interval
 
-        try {
-          thumbnailUrl = await this.generateThumbnail(filePath, timeInSeconds, thumbnailPath);
-          console.log(`Successfully created thumbnail for frame ${index}:`, {
-            timeInSeconds,
-            thumbnailPath,
-            publicUrl: thumbnailUrl
+        // If timeline data exists, use it directly
+        if (timelineData.length > 0) {
+          console.log("Using timeline data from API:", timelineData.length, "entries");
+
+          // Sort timeline data by time
+          timelineData.sort((a: any, b: any) => {
+            const timeA = typeof a.time === 'number' ? a.time : parseFloat(a.time);
+            const timeB = typeof b.time === 'number' ? b.time : parseFloat(b.time);
+            return timeA - timeB;
           });
-        } catch (err) {
-          console.error(`Failed to generate thumbnail for frame ${index}:`, err);
-          thumbnailUrl = null;
+
+          // Process each timeline entry
+          for (const frame of timelineData) {
+            const confidence: Record<string, number> = {};
+            const time = typeof frame.time === 'number' ? frame.time : parseFloat(frame.time);
+
+            if (Array.isArray(frame.classes)) {
+              frame.classes.forEach((cls: { class: string; score: number }) => {
+                if (!cls.class.startsWith('no_') && cls.score > 0) {
+                  const key = cls.class.replace(/^yes_/, '').replace(/_/g, ' ');
+                  confidence[key] = cls.score;
+                }
+              });
+            }
+
+            if (time <= duration) { // Only include timestamps within video duration
+              videoOutput.push({ time, confidence });
+            }
+          }
+        } else {
+          // If no timeline data, generate evenly spaced timestamps
+          console.log("No timeline data, generating timestamps with interval:", defaultInterval);
+          for (let time = 0; time <= duration; time += defaultInterval) {
+            const confidence: Record<string, number> = {};
+
+            // Use general confidence scores from the API response
+            const baseClasses = response.data.status[0].response.output[0].classes;
+            baseClasses.forEach((cls: { class: string; score: number }) => {
+              if (!cls.class.startsWith('no_') && cls.score > 0) {
+                const key = cls.class.replace(/^yes_/, '').replace(/_/g, ' ');
+                confidence[key] = cls.score;
+              }
+            });
+
+            videoOutput.push({ time, confidence });
+          }
+
+          // Always include the last frame if it's not already included
+          const lastTime = Math.floor(duration);
+          if (lastTime > videoOutput[videoOutput.length - 1].time) {
+            videoOutput.push({
+              time: lastTime,
+              confidence: { ...videoOutput[videoOutput.length - 1].confidence }
+            });
+          }
         }
 
-        return {
-          time: timeInSeconds,
-          confidence: frameScores,
-          thumbnail: thumbnailUrl
-        };
-      }));
+        console.log("Final processed video output:", {
+          numberOfFrames: videoOutput.length,
+          firstFrame: videoOutput[0],
+          lastFrame: videoOutput[videoOutput.length - 1],
+          duration
+        });
 
-      console.log("Timeline processing completed:", {
-        timelineLength: timeline.length,
-        firstFrameThumbnail: timeline[0]?.thumbnail,
-        sampleFrames: timeline.slice(0, 2).map(frame => ({
-          time: frame.time,
-          thumbnail: frame.thumbnail,
-          hasConfidence: Object.keys(frame.confidence).length > 0
-        }))
+      } catch (e) {
+        console.error("Error processing timeline data:", e);
+        if (e instanceof Error) {
+          console.error("Error details:", {
+            message: e.message,
+            stack: e.stack,
+          });
+        }
+      }
+
+      // Process overall confidence scores
+      const result = response.data.status[0].response.output[0].classes;
+      const scores: Record<string, number> = {};
+
+      result.forEach((item: { class: string; score: number }) => {
+        if (item.score <= 0 || item.class.startsWith('no_')) return;
+        const cleanName = item.class
+          .replace(/^yes_/, '')
+          .replace(/_/g, ' ');
+        if (item.score > 0.001) {
+          scores[cleanName] = item.score;
+        }
       });
 
       const maxScore = Math.max(0, ...Object.values(scores));
@@ -255,19 +320,19 @@ export class ModerationService {
         status,
         regions: [],
         aiConfidence: scores,
-        output: timeline.map(frame => ({
-          time: frame.time,
-          confidence: frame.confidence,
-          thumbnail: frame.thumbnail
-        }))
+        output: videoOutput.length > 0 ? videoOutput : undefined,
       };
-
     } catch (error) {
       console.error("TheHive API error:", error);
       if (axios.isAxiosError(error)) {
         console.error("API Response:", error.response?.data);
       }
-      throw error;
+      return {
+        status: "flagged",
+        regions: [],
+        aiConfidence: { "api_error": 1.0 },
+        output: undefined
+      };
     }
   }
 
@@ -307,9 +372,7 @@ export class ModerationService {
           throw new Error("File is empty");
         }
 
-        return service === "thehive"
-          ? await this.moderateMediaWithHive(filePath)
-          : await this.moderateMediaWithOpenAI(filePath);
+        return await this.moderateImage(filePath); // Use the new moderateImage function
       }
 
       throw new Error(`Unsupported content type: ${content.type}`);
