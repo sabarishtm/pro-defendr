@@ -458,7 +458,8 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   return (
     <div className="space-y-4">
-      <Card>
+      {/* Common Filter Card */}
+      <Card className="mb-2">
         <CardHeader>
           <CardDescription>
             Filter and search content items
