@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Shield } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -55,7 +56,10 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-[400px]">
         <CardHeader>
-          <CardTitle>Content Moderation Center</CardTitle>
+          <div className="flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <CardTitle>Defendr</CardTitle>
+          </div>
           <CardDescription>Login to access your dashboard</CardDescription>
         </CardHeader>
         <CardContent>
