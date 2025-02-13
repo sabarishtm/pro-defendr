@@ -43,8 +43,8 @@ function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
       </h3>
       <div className="flex flex-wrap gap-2">
         {Object.entries(timePoint.confidence)
-          .filter(([_, confidence]) => confidence > 0)  // Filter out scores ≤ 0
-          .sort(([_, a], [__, b]) => b - a)
+          .filter(([_, confidence]) => confidence > 0.001)  // Filter out effectively zero scores
+          .sort(([_, a], [__, b]) => b - a)  // Sort by confidence in descending order
           .map(([type, confidence]) => (
             <Badge
               key={type}
@@ -357,7 +357,8 @@ export function CaseDetails({
                     <h3 className="text-sm font-medium text-muted-foreground">Content Warnings</h3>
                     <div className="flex flex-wrap gap-2">
                       {contentItem.metadata.aiAnalysis.contentFlags
-                        .filter(flag => flag.severity > 0)  // Filter out severity ≤ 0
+                        .filter(flag => flag.severity > 0.001)  // Filter out effectively zero scores
+                        .sort((a, b) => b.severity - a.severity)  // Sort by severity in descending order
                         .map((flag, index) => (
                           <Badge
                             key={index}
