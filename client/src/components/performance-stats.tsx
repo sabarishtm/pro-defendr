@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Case } from "@shared/schema";
 import {
   LineChart,
   Line,
@@ -7,29 +6,31 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend
 } from "recharts";
 
 export default function PerformanceStats() {
-  const { data: cases = [] } = useQuery<Case[]>({
-    queryKey: ["/api/cases"],
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["/api/stats"],
+    refetchInterval: 30000 // Refetch every 30 seconds
   });
 
-  // Group cases by date and count decisions
-  const trendData = cases.reduce((acc, case_) => {
-    const date = new Date(case_.createdAt).toLocaleDateString();
-    if (!acc[date]) {
-      acc[date] = { date, approved: 0, rejected: 0, review: 0 };
-    }
-    if (case_.decision) {
-      acc[date][case_.decision]++;
-    }
-    return acc;
-  }, {} as Record<string, { date: string; approved: number; rejected: number; review: number }>);
+  if (isLoading || !stats) {
+    return (
+      <div className="h-[300px] w-full flex items-center justify-center text-muted-foreground">
+        Loading statistics...
+      </div>
+    );
+  }
 
-  // Convert to array and sort by date
-  const chartData = Object.values(trendData).sort((a, b) =>
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  // Format moderation trends data
+  const chartData = stats.moderationTrends?.map(trend => ({
+    date: new Date(trend.date).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    }),
+    reviewed: trend.count
+  })) || [];
 
   return (
     <div className="h-[300px] w-full">
@@ -38,28 +39,15 @@ export default function PerformanceStats() {
           <XAxis
             dataKey="date"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           />
           <YAxis tick={{ fontSize: 12 }} />
           <Tooltip />
+          <Legend />
           <Line
+            name="Reviews"
             type="monotone"
-            dataKey="approved"
+            dataKey="reviewed"
             stroke="hsl(var(--primary))"
-            strokeWidth={2}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="rejected"
-            stroke="hsl(var(--destructive))"
-            strokeWidth={2}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="review"
-            stroke="hsl(var(--warning))"
             strokeWidth={2}
             dot={false}
           />
