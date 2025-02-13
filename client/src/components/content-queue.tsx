@@ -21,7 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Search, FileText, Image as ImageIcon, Video, Trash2, Filter } from "lucide-react";
+import { Eye, Search, FileText, Image as ImageIcon, Video, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -29,6 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -65,6 +71,13 @@ interface Filters {
 }
 
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
+  // Add current user query
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/users/me"],
+  });
+
+  const [activeTab, setActiveTab] = useState("my-queue");
+
   // Sorting state
   const [sortField, setSortField] = useState<keyof ContentItem>("createdAt");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -114,8 +127,17 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     },
   });
 
-  // Filter items based on all criteria
+  // Filter items based on all criteria and current tab
   const filteredItems = items.filter(item => {
+    // First filter by tab
+    const isMyQueue = activeTab === "my-queue";
+    const matchesQueue = isMyQueue
+      ? item.assignedTo === currentUser?.id
+      : !isMyQueue;
+
+    if (!matchesQueue) return false;
+
+    // Then apply other filters
     const matchesSearch =
       item.content.toLowerCase().includes(search.toLowerCase()) ||
       item.type.toLowerCase().includes(search.toLowerCase()) ||
@@ -250,392 +272,698 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
 
   return (
     <div className="space-y-4">
-      {/* Filter Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Content</CardTitle>
-          <CardDescription>
-            Refine the content queue using multiple criteria
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search content..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="w-[200px]"
-              />
-            </div>
-            <Select
-              value={filters.type}
-              onValueChange={(value) => {
-                setFilters((prev) => ({ ...prev, type: value }));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Content Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {uniqueTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.status}
-              onValueChange={(value) => {
-                setFilters((prev) => ({ ...prev, status: value }));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {uniqueStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.priority}
-              onValueChange={(value) => {
-                setFilters((prev) => ({ ...prev, priority: value }));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={filters.assignedTo}
-              onValueChange={(value) => {
-                setFilters((prev) => ({ ...prev, assignedTo: value }));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Assigned To" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Assignees</SelectItem>
-                <SelectItem value="unassigned">Unassigned</SelectItem>
-                {uniqueAssignees.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[130px]">
-                  {filters.dateFrom ? format(filters.dateFrom, "PP") : "From Date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={filters.dateFrom}
-                  onSelect={(date) => {
-                    setFilters((prev) => ({ ...prev, dateFrom: date }));
-                    setPage(1);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[130px]">
-                  {filters.dateTo ? format(filters.dateTo, "PP") : "To Date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={filters.dateTo}
-                  onSelect={(date) => {
-                    setFilters((prev) => ({ ...prev, dateTo: date }));
-                    setPage(1);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setFilters({
-                  type: "all",
-                  status: "all",
-                  priority: "all",
-                  assignedTo: "all",
-                  dateFrom: null,
-                  dateTo: null,
-                });
-                setPage(1);
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="my-queue">My Queue</TabsTrigger>
+          <TabsTrigger value="team-queue">Team Queue</TabsTrigger>
+        </TabsList>
 
-      {/* Content Queue Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Content Queue</CardTitle>
+        <TabsContent value="my-queue" className="mt-4">
+          {/* Filter Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>My Content Queue</CardTitle>
               <CardDescription>
-                Review and moderate content items ({totalItems} items)
+                Content items assigned to me
               </CardDescription>
-            </div>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => {
-                setPageSize(Number(value));
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="Page Size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="20">20 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[100px] py-2">Preview</TableHead>
-                <TableHead className="py-2">Title</TableHead>
-                <TableHead onClick={() => toggleSort("type")} className="cursor-pointer py-2">
-                  Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer py-2">
-                  Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead onClick={() => toggleSort("status")} className="cursor-pointer py-2">
-                  Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer py-2">
-                  Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead className="py-2">Assigned To</TableHead>
-                <TableHead className="w-[100px] py-2">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedItems.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className="group cursor-pointer hover:bg-muted/50"
-                  onClick={() => onOpenModeration?.(item)}
-                >
-                  <TableCell className="py-1 px-2">
-                    <div className="relative w-[80px] h-[45px] rounded overflow-hidden bg-muted">
-                      {item.type.toLowerCase() === 'image' && (
-                        <>
-                          <img
-                            src={item.content}
-                            alt="Thumbnail"
-                            className="w-full h-full object-contain blur-sm group-hover:blur-0 transition-all duration-500"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <ImageIcon className="w-4 h-4 text-white" />
-                          </div>
-                        </>
-                      )}
-                      {item.type.toLowerCase() === 'video' && (
-                        <>
-                          {item.metadata.aiAnalysis?.timeline?.[0]?.thumbnail ? (
-                            <>
-                              <img
-                                src={item.metadata.aiAnalysis.timeline[0].thumbnail}
-                                alt="Video thumbnail"
-                                className="w-full h-full object-contain blur-sm group-hover:blur-0 transition-all duration-500"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
-                                }}
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                <Video className="w-4 h-4 text-white" />
-                              </div>
-                            </>
-                          ) : (
-                            <div className="fallback-icon absolute inset-0 flex items-center justify-center">
-                              <Video className="w-4 h-4 text-muted-foreground" />
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {item.type.toLowerCase() === 'text' && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FileText className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-1 font-medium">
-                    <div className="truncate max-w-[200px] text-sm">{getDisplayName(item)}</div>
-                  </TableCell>
-                  <TableCell className="py-1">
-                    <Badge variant="outline" className="text-xs">{item.type}</Badge>
-                  </TableCell>
-                  <TableCell className="py-1">
-                    <Badge variant={item.priority > 1 ? "destructive" : "secondary"} className="text-xs">
-                      {item.priority === 1 ? "Low" : "High"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-1">
-                    <Badge
-                      variant={
-                        item.status === "approved"
-                          ? "secondary"
-                          : item.status === "rejected"
-                          ? "destructive"
-                          : "outline"
-                      }
-                      className="text-xs"
-                    >
-                      {item.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-1 text-sm">
-                    {item.createdAt ? (
-                      format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
-                    ) : (
-                      "Unknown"
-                    )}
-                  </TableCell>
-                  <TableCell className="py-1">
-                    {item.assignedUserName ? (
-                      <Badge variant="outline" className="bg-muted text-xs">
-                        {item.assignedUserName}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">Unassigned</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-1">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenModeration?.(item);
-                        }}
-                      >
-                        <Eye className="w-3 h-3" />
-                      </Button>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Content</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this content? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                              Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteMutation.mutate(item.id);
-                              }}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
-              </p>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <div className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search content..."
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-[200px]"
+                  />
                 </div>
+                <Select
+                  value={filters.type}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, type: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Content Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {uniqueTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.status}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, status: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {uniqueStatuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.priority}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, priority: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.assignedTo}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, assignedTo: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Assigned To" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Assignees</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {uniqueAssignees.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[130px]">
+                      {filters.dateFrom ? format(filters.dateFrom, "PP") : "From Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={filters.dateFrom}
+                      onSelect={(date) => {
+                        setFilters((prev) => ({ ...prev, dateFrom: date }));
+                        setPage(1);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[130px]">
+                      {filters.dateTo ? format(filters.dateTo, "PP") : "To Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={filters.dateTo}
+                      onSelect={(date) => {
+                        setFilters((prev) => ({ ...prev, dateTo: date }));
+                        setPage(1);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 <Button
                   variant="outline"
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= totalPages}
+                  size="sm"
+                  onClick={() => {
+                    setFilters({
+                      type: "all",
+                      status: "all",
+                      priority: "all",
+                      assignedTo: "all",
+                      dateFrom: null,
+                      dateTo: null,
+                    });
+                    setPage(1);
+                  }}
                 >
-                  Next
+                  Clear
                 </Button>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+
+          {/* Content Queue Card */}
+          <Card className="mt-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>My Queue</CardTitle>
+                  <CardDescription>
+                    Items assigned to me ({filteredItems.length} items)
+                  </CardDescription>
+                </div>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Page Size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[100px] py-2">Preview</TableHead>
+                      <TableHead className="py-2">Title</TableHead>
+                      <TableHead onClick={() => toggleSort("type")} className="cursor-pointer py-2">
+                        Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer py-2">
+                        Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead onClick={() => toggleSort("status")} className="cursor-pointer py-2">
+                        Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer py-2">
+                        Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead className="py-2">Assigned To</TableHead>
+                      <TableHead className="w-[100px] py-2">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedItems.map((item) => (
+                      <TableRow
+                        key={item.id}
+                        className="group cursor-pointer hover:bg-muted/50"
+                        onClick={() => onOpenModeration?.(item)}
+                      >
+                        <TableCell className="py-1 px-2">
+                          {renderThumbnail(item)}
+                        </TableCell>
+                        <TableCell className="py-1 font-medium">
+                          <div className="truncate max-w-[200px] text-sm">{getDisplayName(item)}</div>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <Badge variant="outline" className="text-xs">{item.type}</Badge>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <Badge variant={item.priority > 1 ? "destructive" : "secondary"} className="text-xs">
+                            {item.priority === 1 ? "Low" : "High"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <Badge
+                            variant={
+                              item.status === "approved"
+                                ? "secondary"
+                                : item.status === "rejected"
+                                  ? "destructive"
+                                  : "outline"
+                            }
+                            className="text-xs"
+                          >
+                            {item.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1 text-sm">
+                          {item.createdAt ? (
+                            format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
+                          ) : (
+                            "Unknown"
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1">
+                          {item.assignedUserName ? (
+                            <Badge variant="outline" className="bg-muted text-xs">
+                              {item.assignedUserName}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Unassigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenModeration?.(item);
+                              }}
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-destructive hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Content</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this content? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteMutation.mutate(item.id);
+                                    }}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <div className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page >= totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="team-queue" className="mt-4">
+          {/* Filter Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Content Queue</CardTitle>
+              <CardDescription>
+                All content items in the system
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search content..."
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-[200px]"
+                  />
+                </div>
+                <Select
+                  value={filters.type}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, type: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Content Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {uniqueTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.status}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, status: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {uniqueStatuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.priority}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, priority: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Priorities</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={filters.assignedTo}
+                  onValueChange={(value) => {
+                    setFilters((prev) => ({ ...prev, assignedTo: value }));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Assigned To" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Assignees</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {uniqueAssignees.map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[130px]">
+                      {filters.dateFrom ? format(filters.dateFrom, "PP") : "From Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={filters.dateFrom}
+                      onSelect={(date) => {
+                        setFilters((prev) => ({ ...prev, dateFrom: date }));
+                        setPage(1);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[130px]">
+                      {filters.dateTo ? format(filters.dateTo, "PP") : "To Date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={filters.dateTo}
+                      onSelect={(date) => {
+                        setFilters((prev) => ({ ...prev, dateTo: date }));
+                        setPage(1);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFilters({
+                      type: "all",
+                      status: "all",
+                      priority: "all",
+                      assignedTo: "all",
+                      dateFrom: null,
+                      dateTo: null,
+                    });
+                    setPage(1);
+                  }}
+                >
+                  Clear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Content Queue Card */}
+          <Card className="mt-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Team Queue</CardTitle>
+                  <CardDescription>
+                    All content items ({filteredItems.length} items)
+                  </CardDescription>
+                </div>
+                <Select
+                  value={pageSize.toString()}
+                  onValueChange={(value) => {
+                    setPageSize(Number(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Page Size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[100px] py-2">Preview</TableHead>
+                      <TableHead className="py-2">Title</TableHead>
+                      <TableHead onClick={() => toggleSort("type")} className="cursor-pointer py-2">
+                        Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer py-2">
+                        Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead onClick={() => toggleSort("status")} className="cursor-pointer py-2">
+                        Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer py-2">
+                        Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                      </TableHead>
+                      <TableHead className="py-2">Assigned To</TableHead>
+                      <TableHead className="w-[100px] py-2">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedItems.map((item) => (
+                      <TableRow
+                        key={item.id}
+                        className="group cursor-pointer hover:bg-muted/50"
+                        onClick={() => onOpenModeration?.(item)}
+                      >
+                        <TableCell className="py-1 px-2">
+                          {renderThumbnail(item)}
+                        </TableCell>
+                        <TableCell className="py-1 font-medium">
+                          <div className="truncate max-w-[200px] text-sm">{getDisplayName(item)}</div>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <Badge variant="outline" className="text-xs">{item.type}</Badge>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <Badge variant={item.priority > 1 ? "destructive" : "secondary"} className="text-xs">
+                            {item.priority === 1 ? "Low" : "High"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <Badge
+                            variant={
+                              item.status === "approved"
+                                ? "secondary"
+                                : item.status === "rejected"
+                                  ? "destructive"
+                                  : "outline"
+                            }
+                            className="text-xs"
+                          >
+                            {item.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1 text-sm">
+                          {item.createdAt ? (
+                            format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
+                          ) : (
+                            "Unknown"
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1">
+                          {item.assignedUserName ? (
+                            <Badge variant="outline" className="bg-muted text-xs">
+                              {item.assignedUserName}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Unassigned</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenModeration?.(item);
+                              }}
+                            >
+                              <Eye className="w-3 h-3" />
+                            </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-destructive hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Content</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this content? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteMutation.mutate(item.id);
+                                    }}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-mutedforeground">
+                    Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
+                  </p>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <div className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page >= totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
