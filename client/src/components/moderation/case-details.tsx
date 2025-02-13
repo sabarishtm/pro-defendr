@@ -359,28 +359,31 @@ export function CaseDetails({
               <div className="grid gap-4">
                 {contentItem.metadata.aiAnalysis.contentFlags?.length > 0 && selectedTime === null && (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-muted-foreground">Content Warnings</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {contentItem.metadata.aiAnalysis.contentFlags
-                        .filter(flag => flag.severity > 0.001)  // Filter out effectively zero scores
-                        .sort((a, b) => b.severity - a.severity)  // Sort by severity in descending order
-                        .map((flag, index) => {
-                          console.log(`Processing content flag ${flag.type}:`, {
-                            rawSeverity: flag.severity,
-                            calculatedPercentage: (flag.severity * 100).toFixed(1)
-                          });
-                          return (
-                            <Badge
-                              key={index}
-                              variant={getVariantForScore(flag.severity)}
-                              className="text-xs"
-                            >
-                              {flag.type} ({(flag.severity * 100).toFixed(1)}%)
-                            </Badge>
-                          );
-                        })}
+                      <h3 className="text-sm font-medium text-muted-foreground">Content Warnings</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {contentItem.metadata.aiAnalysis.contentFlags
+                          .filter(flag => flag.severity > 0.001)  // Filter out effectively zero scores
+                          .sort((a, b) => b.severity - a.severity)  // Sort by severity in descending order
+                          .map((flag, index) => {
+                            // Normalize severity from 0-10 scale to 0-1 scale
+                            const normalizedSeverity = flag.severity / 10;
+                            console.log(`Processing content flag ${flag.type}:`, {
+                              rawSeverity: flag.severity,
+                              normalizedSeverity,
+                              calculatedPercentage: (normalizedSeverity * 100).toFixed(1)
+                            });
+                            return (
+                              <Badge
+                                key={index}
+                                variant={getVariantForScore(normalizedSeverity)}
+                                className="text-xs"
+                              >
+                                {flag.type} ({(normalizedSeverity * 100).toFixed(1)}%)
+                              </Badge>
+                            );
+                          })}
+                      </div>
                     </div>
-                  </div>
                 )}
 
                 {contentItem.type === 'video' && selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
