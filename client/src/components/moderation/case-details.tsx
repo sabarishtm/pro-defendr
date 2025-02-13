@@ -21,6 +21,37 @@ interface CaseDetailsProps {
   onComplete: () => void;
 }
 
+interface TimelineAlertProps {
+  timeline: ContentItem["metadata"]["aiAnalysis"]["timeline"];
+  selectedTime: number;
+}
+
+function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
+  const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
+  if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-medium text-muted-foreground">
+        Content Warnings at {selectedTime.toFixed(1)}s
+      </h3>
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(timePoint.confidence)
+          .sort(([_, a], [__, b]) => b - a)
+          .map(([type, confidence]) => (
+            <Badge 
+              key={type} 
+              variant={confidence > 0.5 ? "destructive" : "secondary"}
+              className="text-xs"
+            >
+              {type.replace(/_/g, ' ')} ({(confidence * 100).toFixed(1)}%)
+            </Badge>
+          ))}
+      </div>
+    </div>
+  );
+}
+
 export function CaseDetails({
   contentItem,
   moderationCase,
@@ -212,12 +243,6 @@ export function CaseDetails({
                       videoRef={videoRef}
                       onTimeSelect={setSelectedTime}
                     />
-                    {selectedTime !== null && (
-                      <TimelineAlert
-                        timeline={contentItem.metadata.aiAnalysis.timeline}
-                        selectedTime={selectedTime}
-                      />
-                    )}
                   </div>
                 )}
 
@@ -331,6 +356,13 @@ export function CaseDetails({
                   </div>
                 )}
 
+                {contentItem.type === 'video' && selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
+                  <TimelineAlert
+                    timeline={contentItem.metadata.aiAnalysis.timeline}
+                    selectedTime={selectedTime}
+                  />
+                )}
+
                 {contentItem.metadata.aiAnalysis.classification && (
                   <>
                     <div className="flex items-center justify-between text-sm">
@@ -405,31 +437,5 @@ export function CaseDetails({
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-interface TimelineAlertProps {
-  timeline: ContentItem["metadata"]["aiAnalysis"]["timeline"];
-  selectedTime: number;
-}
-
-function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
-  const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
-  if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
-
-  return (
-    <Alert variant="destructive" className="mt-4">
-      <AlertTriangle className="h-4 w-4" />
-      <AlertDescription>
-        <div className="font-semibold">Content warnings at {selectedTime.toFixed(1)}s:</div>
-        <ul className="list-disc pl-4 mt-2">
-          {Object.entries(timePoint.confidence).map(([type, confidence]) => (
-            <li key={type}>
-              {type}: {(confidence * 100).toFixed(1)}% confidence
-            </li>
-          ))}
-        </ul>
-      </AlertDescription>
-    </Alert>
   );
 }
