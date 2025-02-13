@@ -179,9 +179,15 @@ export function registerRoutes(app: Express) {
       const user = await storage.getUser(userId);
       if (!user) return res.status(401).json({ message: "User not found" });
 
-      // Remove permission check temporarily to debug the data flow
+      // Get all content items with assigned users
       const items = await storage.getContentItemsWithAssignedUsers();
-      res.json(items);
+
+      // Filter out Secondary Review items for Agent users
+      const filteredItems = user.role === UserRole.AGENT
+        ? items.filter(item => item.status !== ContentStatus.SECONDARY_REVIEW)
+        : items;
+
+      res.json(filteredItems);
     } catch (error) {
       console.error("Error fetching content items:", error);
       res.status(500).json({ message: "Error fetching content items" });
