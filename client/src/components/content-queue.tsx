@@ -188,7 +188,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     switch (item.type.toLowerCase()) {
       case 'image':
         return (
-          <div className="relative w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted group-hover:scale-110 transition-all duration-200">
+          <div className="relative w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted">
             <img
               src={item.content}
               alt="Thumbnail"
@@ -198,31 +198,31 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="hidden absolute inset-0 flex items-center justify-center">
-              <ImageIcon className="w-8 h-8 text-muted-foreground" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <ImageIcon className="w-6 h-6 text-white" />
             </div>
           </div>
         );
       case 'video':
         return (
-          <div className="w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted group-hover:scale-110 transition-all duration-200">
+          <div className="relative w-[120px] h-[80px] rounded-lg overflow-hidden bg-muted">
             {item.metadata.aiAnalysis?.timeline?.[0]?.thumbnail ? (
-              <div className="relative w-full h-full">
+              <>
                 <img
                   src={item.metadata.aiAnalysis.timeline[0].thumbnail}
                   alt="Video thumbnail"
                   className="w-full h-full object-contain blur-sm group-hover:blur-0 transition-all duration-500"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
                   }}
                 />
-                <div className="hidden absolute inset-0 flex items-center justify-center">
-                  <Video className="w-8 h-8 text-muted-foreground" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Video className="w-6 h-6 text-white" />
                 </div>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center justify-center w-full h-full">
+              <div className="fallback-icon hidden absolute inset-0 flex items-center justify-center">
                 <Video className="w-8 h-8 text-muted-foreground" />
               </div>
             )}
@@ -230,7 +230,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
         );
       default:
         return (
-          <div className="w-[120px] h-[80px] rounded-lg flex items-center justify-center bg-muted group-hover:scale-110 transition-all duration-200">
+          <div className="w-[120px] h-[80px] rounded-lg flex items-center justify-center bg-muted">
             <FileText className="w-8 h-8 text-muted-foreground" />
           </div>
         );
