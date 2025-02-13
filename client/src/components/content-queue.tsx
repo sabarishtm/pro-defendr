@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import type { ContentItem } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -70,31 +70,53 @@ interface Filters {
 }
 
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
-  // Add current user query
   const { data: currentUser } = useQuery({
     queryKey: ["/api/users/me"],
   });
 
-  const [activeTab, setActiveTab] = useState("my-queue");
+  // Load persisted state from localStorage
+  const loadPersistedState = () => {
+    try {
+      const savedTab = localStorage.getItem('content-queue-tab') || 'my-queue';
+      const savedFilters = JSON.parse(localStorage.getItem('content-queue-filters') || '{}');
+      return { savedTab, savedFilters };
+    } catch (error) {
+      console.error('Error loading persisted state:', error);
+      return { savedTab: 'my-queue', savedFilters: {} };
+    }
+  };
 
-  // Sorting state
-  const [sortField, setSortField] = useState<keyof ContentItem>("createdAt");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const { savedTab, savedFilters } = loadPersistedState();
 
-  // Pagination state
+  // Initialize state with persisted values
+  const [activeTab, setActiveTab] = useState(savedTab);
+  const [sortField, setSortField] = useState<keyof ContentItem>(savedFilters.sortField || "createdAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(savedFilters.sortDirection || "desc");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  // Search and filter state
-  const [search, setSearch] = useState("");
+  const [pageSize, setPageSize] = useState(savedFilters.pageSize || 10);
+  const [search, setSearch] = useState(savedFilters.search || "");
   const [filters, setFilters] = useState<Filters>({
-    type: "all",
-    status: "all",
-    priority: "all",
-    assignedTo: "all",
-    dateFrom: null,
-    dateTo: null,
+    type: savedFilters.type || "all",
+    status: savedFilters.status || "all",
+    priority: savedFilters.priority || "all",
+    assignedTo: savedFilters.assignedTo || "all",
+    dateFrom: savedFilters.dateFrom ? new Date(savedFilters.dateFrom) : null,
+    dateTo: savedFilters.dateTo ? new Date(savedFilters.dateTo) : null,
   });
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('content-queue-tab', activeTab);
+    localStorage.setItem('content-queue-filters', JSON.stringify({
+      sortField,
+      sortDirection,
+      pageSize,
+      search,
+      ...filters,
+      dateFrom: filters.dateFrom?.toISOString(),
+      dateTo: filters.dateTo?.toISOString(),
+    }));
+  }, [activeTab, sortField, sortDirection, pageSize, search, filters]);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -456,6 +478,23 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
     </Card>
   );
 
+  const clearFilters = () => {
+    setFilters({
+      type: "all",
+      status: "all",
+      priority: "all",
+      assignedTo: "all",
+      dateFrom: null,
+      dateTo: null,
+    });
+    setSearch("");
+    setSortField("createdAt");
+    setSortDirection("desc");
+    setPage(1);
+    // Clear persisted filters
+    localStorage.removeItem('content-queue-filters');
+  };
+
   return (
     <div className="space-y-4">
       {/* Common Filter Card */}
@@ -592,17 +631,7 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setFilters({
-                  type: "all",
-                  status: "all",
-                  priority: "all",
-                  assignedTo: "all",
-                  dateFrom: null,
-                  dateTo: null,
-                });
-                setPage(1);
-              }}
+              onClick={clearFilters}
             >
               Clear
             </Button>

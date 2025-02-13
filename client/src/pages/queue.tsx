@@ -30,8 +30,10 @@ export default function Queue() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Add refetchInterval to keep queue fresh
   const { data: nextItem, isLoading } = useQuery<ContentItem>({
     queryKey: ["/api/content/next"],
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const uploadMutation = useMutation({
