@@ -202,6 +202,7 @@ export function CaseDetails({
                     Your browser does not support the video tag.
                   </video>
                 </div>
+
                 {contentItem.metadata.aiAnalysis?.timeline && (
                   <>
                     <VideoTimeline
@@ -220,6 +221,7 @@ export function CaseDetails({
                     )}
                   </>
                 )}
+
                 <div className="space-y-4 pt-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
