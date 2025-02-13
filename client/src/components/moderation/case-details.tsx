@@ -185,7 +185,7 @@ export function CaseDetails({
                 </div>
               </div>
             ) : (
-              <>
+              <div className="space-y-4">
                 <div className="bg-background border rounded-lg shadow-sm overflow-hidden min-h-[400px]">
                   <video
                     ref={videoRef}
@@ -194,35 +194,34 @@ export function CaseDetails({
                     className="w-full h-[calc(100vh-400px)] min-h-[400px] object-contain"
                     style={getBlurStyle()}
                     onError={() => setMediaError(true)}
-                    onLoadedMetadata={() => console.log("Video loaded:", {
-                      duration: videoRef.current?.duration,
-                      src: videoRef.current?.src
-                    })}
+                    onLoadedMetadata={() => {
+                      console.log("Video loaded:", {
+                        duration: videoRef.current?.duration,
+                        src: videoRef.current?.src
+                      });
+                    }}
                   >
                     Your browser does not support the video tag.
                   </video>
                 </div>
 
-                {contentItem.metadata.aiAnalysis?.timeline && (
-                  <>
+                {contentItem.metadata?.aiAnalysis?.timeline && (
+                  <div className="space-y-4">
                     <VideoTimeline
                       timeline={contentItem.metadata.aiAnalysis.timeline}
                       videoRef={videoRef}
-                      onTimeSelect={(time) => {
-                        console.log("Time selected:", time);
-                        setSelectedTime(time);
-                      }}
+                      onTimeSelect={setSelectedTime}
                     />
-                    {selectedTime !== null && contentItem.metadata.aiAnalysis?.timeline && (
+                    {selectedTime !== null && (
                       <TimelineAlert
                         timeline={contentItem.metadata.aiAnalysis.timeline}
                         selectedTime={selectedTime}
                       />
                     )}
-                  </>
+                  </div>
                 )}
 
-                <div className="space-y-4 pt-4">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Switch
@@ -258,7 +257,7 @@ export function CaseDetails({
                     disabled={!isBlurred}
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
         );

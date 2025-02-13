@@ -21,29 +21,11 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
       hasVideoRef: Boolean(videoRef.current),
       videoSrc: videoRef.current?.src
     });
-
-    if (timeline?.length) {
-      console.log("First thumbnail URL:", timeline[0]?.thumbnail);
-    }
   }, [timeline, videoRef]);
 
-  const scroll = (direction: "left" | "right") => {
-    if (!scrollContainerRef.current) return;
-    const scrollAmount = 200;
-    const container = scrollContainerRef.current;
-    container.scrollBy({
-      left: direction === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth"
-    });
-  };
-
+  // Return early if no timeline data
   if (!timeline?.length) {
     console.log("No timeline data available");
-    return null;
-  }
-
-  if (!videoRef.current) {
-    console.log("No video reference available");
     return null;
   }
 
@@ -57,7 +39,14 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
           variant="outline"
           size="icon"
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10"
-          onClick={() => scroll("left")}
+          onClick={() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollBy({
+                left: -200,
+                behavior: "smooth"
+              });
+            }
+          }}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -88,11 +77,6 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                 className="flex-shrink-0 cursor-pointer"
                 whileHover={{ scale: 1.05 }}
                 onClick={() => {
-                  console.log("Thumbnail clicked:", {
-                    index,
-                    time: point.time,
-                    thumbnailUrl: point.thumbnail
-                  });
                   if (videoRef.current) {
                     videoRef.current.currentTime = point.time;
                     onTimeSelect(point.time);
@@ -119,16 +103,6 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                         }}
                       />
                     )}
-                    {!point.thumbnail && videoRef.current && (
-                      <div 
-                        className="w-full h-full"
-                        style={{
-                          background: `url(${videoRef.current.src}#t=${point.time})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center'
-                        }}
-                      />
-                    )}
                     <span className="absolute bottom-1 right-1 text-xs bg-black/70 text-white px-1 rounded">
                       {Math.floor(point.time)}s
                     </span>
@@ -147,7 +121,14 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
           variant="outline"
           size="icon"
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10"
-          onClick={() => scroll("right")}
+          onClick={() => {
+            if (scrollContainerRef.current) {
+              scrollContainerRef.current.scrollBy({
+                left: 200,
+                behavior: "smooth"
+              });
+            }
+          }}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
