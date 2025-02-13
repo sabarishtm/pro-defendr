@@ -863,7 +863,7 @@ export function registerRoutes(app: Express) {
     }
   });
 
-  // Add this route before the server export
+  // Update the stats endpoint
   app.get("/api/stats", async (req: Request, res: Response) => {
     const userId = req.session.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -875,20 +875,41 @@ export function registerRoutes(app: Express) {
       const allContent = await storage.getContentItems();
       const cases = await storage.getCases();
 
-      console.log("Fetched cases:", cases.length);
+      // Calculate status counts
+      const statusCounts = {
+        pending: allContent.filter(c => c.status === "pending").length,
+        approved: allContent.filter(c => c.status === "approved").length,
+        rejected: allContent.filter(c => c.status=== "rejected").length
+      };
 
-      // Calculate statistics
-      const total = allContent.length;
-      const completedCases = cases.filter(c => c.decision);
-      const avgProcessingTime = completedCases.length ?
-        completedCases.reduce((acc, c) => {
-          const creationTime = new Date(c.createdAt).getTime();
-          const completionTime = creationTime + (24 * 60 * 60 * 1000); // Assuming 24h for now as we don't store completion time
-          return acc + (completionTime - creationTime);
-        }, 0) / completedCases.length :
-        0;
+      // Calculate content type distribution
+      const contentTypeCounts = allContent.reduce((acc, item) => {
+        acc[item.type] = (acc[item.type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
 
-      // Calculate AI accuracy by comparing AI suggestions with moderator decisions
+      // Calculate moderation trends (last 7 days)
+      const now = new Date();
+      const moderationTrends = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+
+        const count = cases.filter(c => {
+          const caseDate = new Date(c.createdAt);
+          return caseDate.getFullYear() === date.getFullYear() &&
+                 caseDate.getMonth() === date.getMonth() &&
+                 caseDate.getDate() === date.getDate() &&
+                 c.decision;
+        }).length;
+
+        return {
+          date: date.toISOString(),
+          count
+        };
+      }).reverse(); // Most recent last
+
+      // Calculate AI accuracy
       let correctPredictions = 0;
       let totalPredictions = 0;
 
@@ -907,74 +928,23 @@ export function registerRoutes(app: Express) {
         }
       }
 
-      const aiAccuracy = totalPredictions ? correctPredictions / totalPredictions : 0;
-      const flaggedContent = allContent.filter(item =>
-        item.metadata.aiAnalysis?.contentFlags.some(flag => flag.severity > 7)
-      );
-      const flaggedContentRatio = total ? flaggedContent.length / total : 0;
+      const aiAccuracy = totalPredictions ? (correctPredictions / totalPredictions) : 0;
 
-      // Generate moderation trends (last 7 days)
-      const moderationTrends = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0);
-
-        const daysCases = cases.filter(c => {
-          const caseDate = new Date(c.createdAt);
-          return caseDate.getFullYear() === date.getFullYear() &&
-                 caseDate.getMonth() === date.getMonth() &&
-                 caseDate.getDate() === date.getDate() &&
-                 c.decision;
-        });
-
-        return {
-          date: date.toISOString().split('T')[0],
-          approved: daysCases.filter(c => c.decision === 'approved').length,
-          rejected: daysCases.filter(c => c.decision === 'rejected').length,
-          flagged: daysCases.filter(c => c.decision === 'review').length,
-        };
-      }).reverse();
-
-      // Calculate content type distribution
-      const contentTypeStats = allContent.reduce((acc, item) => {
-        if (!acc[item.type]) {
-          acc[item.type] = { count: 0, totalTime: 0 };
-        }
-        acc[item.type].count++;
-
-        const itemCase = cases.find(c => c.contentId === item.id && c.decision);
-        if (itemCase) {
-          const creationTime = new Date(itemCase.createdAt).getTime();
-          const completionTime = creationTime + (24 * 60 * 60 * 1000); // Assuming 24h for now
-          acc[item.type].totalTime += (completionTime - creationTime);
-        }
-
-        return acc;
-      }, {} as Record<string, { count: number; totalTime: number; }>);
-
-      const contentTypeDistribution = Object.entries(contentTypeStats).map(([type, stats]) => ({
-        type,
-        avgProcessingTime: stats.count ? stats.totalTime / stats.count : 0,
-        count: stats.count,
-      }));
-
-      const response = {
-        total,
-        avgProcessingTime,
-        aiAccuracy,
-        flaggedContentRatio,
+      res.json({
+        statusCounts,
+        contentTypeCounts,
         moderationTrends,
-        contentTypeDistribution,
-      };
-
-      console.log("Stats response:", response);
-      res.json(response);
+        aiAccuracy,
+        totalReviewed: cases.filter(c => c.decision).length,
+        totalPending: allContent.filter(c => c.status === "pending").length
+      });
     } catch (error) {
-      console.error("Error fetching stats:", error);
-      res.status(500).json({ message: "Error fetching statistics" });
+      console.error("Error fetching statistics:", error);
+      res.status(500).json({ message: "Failed to fetch statistics" });
     }
   });
 
+  // Add this route before the server export
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -21,37 +21,34 @@ const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3
 
 export default function Reports() {
   const [timeframe, setTimeframe] = useState("today");
-  
-  const { data: stats } = useQuery({
-    queryKey: ["/api/stats"]
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["/api/stats", timeframe],
+    refetchInterval: 30000 // Refetch every 30 seconds
   });
 
-  if (!stats) {
-    return null;
+  if (isLoading || !stats) {
+    return <div className="p-8">Loading statistics...</div>;
   }
 
-  const pieData = [
-    { name: "Pending", value: stats.pending },
-    { name: "Approved", value: stats.approved },
-    { name: "Rejected", value: stats.rejected },
+  // Format status distribution data
+  const statusData = [
+    { name: "Pending", value: stats.statusCounts?.pending || 0 },
+    { name: "Approved", value: stats.statusCounts?.approved || 0 },
+    { name: "Rejected", value: stats.statusCounts?.rejected || 0 },
   ];
 
-  // Mock data for the performance chart
-  const performanceData = [
-    { time: "9 AM", reviewed: 12 },
-    { time: "10 AM", reviewed: 19 },
-    { time: "11 AM", reviewed: 15 },
-    { time: "12 PM", reviewed: 8 },
-    { time: "1 PM", reviewed: 22 },
-    { time: "2 PM", reviewed: 17 },
-  ];
+  // Format content type distribution data
+  const contentTypeData = stats.contentTypeCounts ? Object.entries(stats.contentTypeCounts).map(([type, count]) => ({
+    type: type.charAt(0).toUpperCase() + type.slice(1),
+    count: count as number
+  })) : [];
 
-  // Mock data for content type distribution
-  const contentTypeData = [
-    { type: "Text", count: 45 },
-    { type: "Images", count: 32 },
-    { type: "Links", count: 23 },
-  ];
+  // Format moderation trends data
+  const moderationTrends = stats.moderationTrends?.map(trend => ({
+    date: new Date(trend.date).toLocaleDateString(),
+    reviewed: trend.count
+  })) || [];
 
   return (
     <div className="p-8 space-y-8">
@@ -79,7 +76,7 @@ export default function Reports() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={pieData}
+                    data={statusData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -87,7 +84,7 @@ export default function Reports() {
                     outerRadius={100}
                     label
                   >
-                    {pieData.map((_, index) => (
+                    {statusData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -106,8 +103,8 @@ export default function Reports() {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={performanceData}>
-                  <XAxis dataKey="time" />
+                <LineChart data={moderationTrends}>
+                  <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
                   <Line
