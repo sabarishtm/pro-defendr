@@ -35,6 +35,8 @@ export class ModerationService {
       console.log(`Generating thumbnail at ${timeInSeconds.toFixed(2)}s for video: ${videoPath}`);
       console.log(`Output path: ${outputPath}`);
 
+      const timestampText = timeInSeconds.toFixed(2) + "s";
+
       ffmpeg(videoPath)
         .screenshots({
           timestamps: [timeInSeconds],
@@ -42,6 +44,22 @@ export class ModerationService {
           folder: path.dirname(outputPath),
           size: '320x240'
         })
+        .complexFilter([
+          // Add white text with black outline for better visibility
+          {
+            filter: 'drawtext',
+            options: {
+              text: timestampText,
+              fontsize: 24,
+              fontcolor: 'white',
+              x: '(w-text_w)/2',  // Center horizontally
+              y: 'h-th-10',       // 10 pixels from bottom
+              boxcolor: 'black@0.5',
+              box: 1,
+              borderw: 2
+            }
+          }
+        ])
         .on('end', () => {
           console.log(`Successfully generated thumbnail at ${timeInSeconds.toFixed(2)}s:`, outputPath);
           const publicPath = `/uploads/thumbnails/${path.basename(outputPath)}`;
