@@ -59,17 +59,8 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
           }}
         >
           {timeline.map((point, index) => {
-            const flagTypes = Object.keys(point.confidence);
             const maxConfidence = Math.max(...Object.values(point.confidence));
             const severity = maxConfidence > 0.8 ? "high" : maxConfidence > 0.4 ? "medium" : "low";
-
-            console.log(`Rendering thumbnail ${index}:`, {
-              time: point.time,
-              thumbnailUrl: point.thumbnail,
-              flagTypes,
-              maxConfidence,
-              severity
-            });
 
             return (
               <motion.div
@@ -107,11 +98,6 @@ export const VideoTimeline = ({ timeline, videoRef, onTimeSelect }: VideoTimelin
                       {Math.floor(point.time)}s
                     </span>
                   </div>
-                  {flagTypes.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-background/90 p-1 text-xs truncate rounded-b-md">
-                      {flagTypes.map(type => type.replace(/_/g, ' ')).join(", ")}
-                    </div>
-                  )}
                 </div>
               </motion.div>
             );
