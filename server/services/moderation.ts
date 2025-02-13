@@ -1,7 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
 import { ContentItem, ContentRegion, VideoOutput } from "@shared/schema";
-import { existsSync, statSync, readFileSync, mkdirSync, copyFileSync } from "fs";
+import { existsSync, statSync, readFileSync, mkdirSync } from "fs";
 import path from "path";
 import { storage } from "../storage";
 import OpenAI from "openai";
@@ -91,33 +91,18 @@ export class ModerationService {
       const result = response.data.status[0].response;
       const scores: Record<string, number> = {};
 
-      // Process text filters (profanity, etc.)
-      if (result.text_filters && result.text_filters.length > 0) {
-        const filterCounts: Record<string, number> = {};
-        result.text_filters.forEach((filter: { type: string; value: string }) => {
-          filterCounts[filter.type] = (filterCounts[filter.type] || 0) + 1;
-        });
-
-        Object.entries(filterCounts).forEach(([type, count]) => {
-          scores[`${type}`] = count;
-        });
-      }
-
       // Process class-based scores
       const classes = result.output[0].classes;
       classes.forEach((item: { class: string; score: number }) => {
         if (item.score <= 0 || item.class.startsWith('no_')) return;
-
         const cleanName = item.class
           .replace(/^yes_/, '')
           .replace(/_/g, ' ');
-
         scores[cleanName] = item.score;
       });
 
-      const hasHighRiskContent = Object.entries(scores).some(([key, value]) =>
-        (key === 'profanity' && value > 0) || value > 2
-      );
+      // For text moderation, if any high-risk content is detected, flag or reject
+      const hasHighRiskContent = Object.entries(scores).some(([_, value]) => value > 0.8);
       const status = hasHighRiskContent ? "rejected" : "approved";
 
       return {
@@ -146,7 +131,6 @@ export class ModerationService {
         contentType: 'image/jpeg'
       });
 
-      // Use the video-specific token
       console.log("Making API request to TheHive for image/video moderation...");
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
@@ -160,9 +144,10 @@ export class ModerationService {
         }
       );
 
-      console.log("Complete TheHive API Response:", JSON.stringify(response.data, null, 2));
+      console.log("TheHive API Response:", JSON.stringify(response.data, null, 2));
 
       const videoOutput: VideoOutput[] = [];
+
       try {
         // Get video duration using ffprobe
         const ffprobeProcess = spawn('ffprobe', [
@@ -192,65 +177,46 @@ export class ModerationService {
           });
         });
 
-        const timelineData = response.data.status[0].response.timeline || [];
-        const defaultInterval = Math.max(1, Math.floor(duration / 10)); // Ensure at least 1 second interval
+        // Process the output array from the API response
+        const outputs = response.data.status[0].response.output;
+        console.log("Processing API output array, entries:", outputs.length);
 
-        // If timeline data exists, use it directly
-        if (timelineData.length > 0) {
-          console.log("Using timeline data from API:", timelineData.length, "entries");
+        for (const output of outputs) {
+          // Extract time and classes from each output entry
+          if (!output.time || !output.classes) continue;
 
-          // Sort timeline data by time
-          timelineData.sort((a: any, b: any) => {
-            const timeA = typeof a.time === 'number' ? a.time : parseFloat(a.time);
-            const timeB = typeof b.time === 'number' ? b.time : parseFloat(b.time);
-            return timeA - timeB;
+          const time = parseFloat(output.time.toString());
+          if (isNaN(time) || time > duration) continue;
+
+          const confidence: Record<string, number> = {};
+
+          // Process classes for this timestamp
+          output.classes.forEach((cls: { class: string; score: number }) => {
+            if (!cls.class.startsWith('no_') && cls.score > 0) {
+              const key = cls.class.replace(/^yes_/, '').replace(/_/g, ' ');
+              confidence[key] = cls.score;
+            }
           });
 
-          // Process each timeline entry
-          for (const frame of timelineData) {
-            const confidence: Record<string, number> = {};
-            const time = typeof frame.time === 'number' ? frame.time : parseFloat(frame.time);
+          // Generate thumbnail for this timestamp
+          const thumbnailFileName = `${path.parse(filePath).name}_${time.toFixed(2)}.jpg`;
+          const thumbnailPath = path.join(process.cwd(), 'uploads', 'thumbnails', thumbnailFileName);
 
-            if (Array.isArray(frame.classes)) {
-              frame.classes.forEach((cls: { class: string; score: number }) => {
-                if (!cls.class.startsWith('no_') && cls.score > 0) {
-                  const key = cls.class.replace(/^yes_/, '').replace(/_/g, ' ');
-                  confidence[key] = cls.score;
-                }
-              });
-            }
-
-            if (time <= duration) { // Only include timestamps within video duration
-              videoOutput.push({ time, confidence });
-            }
-          }
-        } else {
-          // If no timeline data, generate evenly spaced timestamps
-          console.log("No timeline data, generating timestamps with interval:", defaultInterval);
-          for (let time = 0; time <= duration; time += defaultInterval) {
-            const confidence: Record<string, number> = {};
-
-            // Use general confidence scores from the API response
-            const baseClasses = response.data.status[0].response.output[0].classes;
-            baseClasses.forEach((cls: { class: string; score: number }) => {
-              if (!cls.class.startsWith('no_') && cls.score > 0) {
-                const key = cls.class.replace(/^yes_/, '').replace(/_/g, ' ');
-                confidence[key] = cls.score;
-              }
-            });
-
-            videoOutput.push({ time, confidence });
+          try {
+            await this.generateThumbnail(filePath, time, thumbnailPath);
+            console.log(`Generated thumbnail for timestamp ${time}:`, thumbnailPath);
+          } catch (err) {
+            console.error(`Failed to generate thumbnail for timestamp ${time}:`, err);
           }
 
-          // Always include the last frame if it's not already included
-          const lastTime = Math.floor(duration);
-          if (lastTime > videoOutput[videoOutput.length - 1].time) {
-            videoOutput.push({
-              time: lastTime,
-              confidence: { ...videoOutput[videoOutput.length - 1].confidence }
-            });
-          }
+          videoOutput.push({
+            time,
+            confidence
+          });
         }
+
+        // Sort timestamps chronologically
+        videoOutput.sort((a, b) => a.time - b.time);
 
         console.log("Final processed video output:", {
           numberOfFrames: videoOutput.length,
@@ -260,7 +226,7 @@ export class ModerationService {
         });
 
       } catch (e) {
-        console.error("Error processing timeline data:", e);
+        console.error("Error processing output data:", e);
         if (e instanceof Error) {
           console.error("Error details:", {
             message: e.message,
@@ -269,18 +235,12 @@ export class ModerationService {
         }
       }
 
-      // Process overall confidence scores
-      const result = response.data.status[0].response.output[0].classes;
+      // Process overall confidence scores from all timestamps
       const scores: Record<string, number> = {};
-
-      result.forEach((item: { class: string; score: number }) => {
-        if (item.score <= 0 || item.class.startsWith('no_')) return;
-        const cleanName = item.class
-          .replace(/^yes_/, '')
-          .replace(/_/g, ' ');
-        if (item.score > 0.001) {
-          scores[cleanName] = item.score;
-        }
+      videoOutput.forEach(frame => {
+        Object.entries(frame.confidence).forEach(([key, value]) => {
+          scores[key] = Math.max(scores[key] || 0, value);
+        });
       });
 
       const maxScore = Math.max(0, ...Object.values(scores));
@@ -292,6 +252,7 @@ export class ModerationService {
         aiConfidence: scores,
         output: videoOutput.length > 0 ? videoOutput : undefined,
       };
+
     } catch (error) {
       console.error("TheHive API error:", error);
       if (axios.isAxiosError(error)) {
@@ -304,17 +265,6 @@ export class ModerationService {
         output: undefined
       };
     }
-  }
-
-  private async moderateMediaWithOpenAI(filePath: string): Promise<ModerationResult> {
-    // OpenAI doesn't support direct media moderation yet
-    // Return a default response indicating unsupported media type
-    return {
-      status: "flagged",
-      regions: [],
-      aiConfidence: { "unsupported_media_type": 1.0 },
-      output: undefined
-    };
   }
 
   public async moderateContent(content: ContentItem): Promise<ModerationResult> {
@@ -380,6 +330,16 @@ export class ModerationService {
         aiConfidence: { "api_error": 1.0 },
       };
     }
+  }
+  private async moderateMediaWithOpenAI(filePath: string): Promise<ModerationResult> {
+    // OpenAI doesn't support direct media moderation yet
+    // Return a default response indicating unsupported media type
+    return {
+      status: "flagged",
+      regions: [],
+      aiConfidence: { "unsupported_media_type": 1.0 },
+      output: undefined
+    };
   }
 }
 
