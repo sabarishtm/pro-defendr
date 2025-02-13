@@ -30,6 +30,8 @@ const getVariantForScore = (score: number): "destructive" | "secondary" | "outli
     const timePoint = timeline?.find(t => Math.abs(t.time - selectedTime) < 0.1);
     if (!timePoint || Object.keys(timePoint.confidence).length === 0) return null;
 
+    console.log("Raw timeline confidence scores:", timePoint.confidence);
+
     return (
       <div className="space-y-2">
         <h3 className="text-sm font-medium text-muted-foreground">
@@ -39,15 +41,18 @@ const getVariantForScore = (score: number): "destructive" | "secondary" | "outli
           {Object.entries(timePoint.confidence)
             .filter(([_, confidence]) => confidence > 0.001)  // Filter out effectively zero scores
             .sort(([_, a], [__, b]) => b - a)  // Sort by confidence in descending order
-            .map(([type, confidence]) => (
-              <Badge
-                key={type}
-                variant={getVariantForScore(confidence)}
-                className="text-xs"
-              >
-                {type.replace(/_/g, ' ')} ({(confidence * 100).toFixed(1)}%)
-              </Badge>
-            ))}
+            .map(([type, confidence]) => {
+              console.log(`Processing ${type} confidence:`, confidence);
+              return (
+                <Badge
+                  key={type}
+                  variant={getVariantForScore(confidence)}
+                  className="text-xs"
+                >
+                  {type.replace(/_/g, ' ')} ({(confidence * 100).toFixed(1)}%)
+                </Badge>
+              );
+            })}
         </div>
       </div>
     );
@@ -359,15 +364,21 @@ export function CaseDetails({
                       {contentItem.metadata.aiAnalysis.contentFlags
                         .filter(flag => flag.severity > 0.001)  // Filter out effectively zero scores
                         .sort((a, b) => b.severity - a.severity)  // Sort by severity in descending order
-                        .map((flag, index) => (
-                          <Badge
-                            key={index}
-                            variant={getVariantForScore(flag.severity)}
-                            className="text-xs"
-                          >
-                            {flag.type} ({(flag.severity * 100).toFixed(1)}%)
-                          </Badge>
-                        ))}
+                        .map((flag, index) => {
+                          console.log(`Processing content flag ${flag.type}:`, {
+                            rawSeverity: flag.severity,
+                            calculatedPercentage: (flag.severity * 100).toFixed(1)
+                          });
+                          return (
+                            <Badge
+                              key={index}
+                              variant={getVariantForScore(flag.severity)}
+                              className="text-xs"
+                            >
+                              {flag.type} ({(flag.severity * 100).toFixed(1)}%)
+                            </Badge>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
