@@ -66,35 +66,8 @@ export class ModerationService {
     }
   }
 
-  private async moderateTextWithOpenAI(text: string): Promise<ModerationResult> {
-    try {
-      const response = await this.openai.moderations.create({ input: text });
-      const result = response.results[0];
-
-      const scores: Record<string, number> = {};
-      Object.entries(result.category_scores).forEach(([category, score]) => {
-        if (score > 0.01) { // Only include meaningful scores
-          scores[category.replace(/_/g, ' ')] = score;
-        }
-      });
-
-      return {
-        status: result.flagged ? "rejected" : "approved",
-        regions: [],
-        aiConfidence: scores,
-      };
-    } catch (error) {
-      console.error("OpenAI moderation error:", error);
-      return {
-        status: "flagged",
-        regions: [],
-        aiConfidence: { "api_error": 1.0 },
-      };
-    }
-  }
-
-  private async moderateTextWithHive(text: string): Promise<ModerationResult> {
-    console.log("Moderating text content with TheHive...");
+  private async moderateText(text: string): Promise<ModerationResult> {
+    console.log("Moderating text content...");
 
     try {
       const formData = new FormData();
@@ -107,7 +80,7 @@ export class ModerationService {
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': `Token ${process.env.THEHIVE_API_KEY}`,
+            'Authorization': 'token syxvn72cDaGOaNuCzf8LFsBABMMoo7jk', // Text-specific token
             ...formData.getHeaders()
           }
         }
@@ -173,10 +146,7 @@ export class ModerationService {
         contentType: 'image/jpeg'
       });
 
-      const apiKey = process.env.THEHIVE_API_KEY?.startsWith('token ')
-        ? process.env.THEHIVE_API_KEY
-        : `token ${process.env.THEHIVE_API_KEY}`;
-
+      // Use the video-specific token
       console.log("Making API request to TheHive for image/video moderation...");
       const response = await axios.post(
         'https://api.thehive.ai/api/v2/task/sync',
@@ -184,7 +154,7 @@ export class ModerationService {
         {
           headers: {
             'Accept': 'application/json',
-            'Authorization': apiKey,
+            'Authorization': 'token rvi3tYbKFoj7Ww5aTnPTNpCE29wXQQVJ', // Video-specific token
             ...formData.getHeaders()
           }
         }
@@ -359,7 +329,7 @@ export class ModerationService {
       if (content.type === 'text') {
         const textContent = content.content;
         return service === "thehive"
-          ? await this.moderateTextWithHive(textContent)
+          ? await this.moderateText(textContent)
           : await this.moderateTextWithOpenAI(textContent);
       } else if (content.type === 'image' || content.type === 'video') {
         // For media content, verify file exists and is not empty
@@ -372,7 +342,7 @@ export class ModerationService {
           throw new Error("File is empty");
         }
 
-        return await this.moderateImage(filePath); // Use the new moderateImage function
+        return await this.moderateImage(filePath);
       }
 
       throw new Error(`Unsupported content type: ${content.type}`);
@@ -382,6 +352,32 @@ export class ModerationService {
         status: "flagged",
         regions: [],
         aiConfidence: { "error": 1.0 },
+      };
+    }
+  }
+  private async moderateTextWithOpenAI(text: string): Promise<ModerationResult> {
+    try {
+      const response = await this.openai.moderations.create({ input: text });
+      const result = response.results[0];
+
+      const scores: Record<string, number> = {};
+      Object.entries(result.category_scores).forEach(([category, score]) => {
+        if (score > 0.01) { // Only include meaningful scores
+          scores[category.replace(/_/g, ' ')] = score;
+        }
+      });
+
+      return {
+        status: result.flagged ? "rejected" : "approved",
+        regions: [],
+        aiConfidence: scores,
+      };
+    } catch (error) {
+      console.error("OpenAI moderation error:", error);
+      return {
+        status: "flagged",
+        regions: [],
+        aiConfidence: { "api_error": 1.0 },
       };
     }
   }
