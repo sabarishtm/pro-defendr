@@ -325,7 +325,7 @@ export function CaseDetails({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Content Review</h1>
+          <h1 className="text-2xl font-bold">Content Moderation Workbench</h1>
           <p className="text-sm text-muted-foreground">ID: {contentItem.id}</p>
         </div>
         <Button variant="outline" onClick={handleCancel}>
