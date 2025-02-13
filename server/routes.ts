@@ -725,11 +725,16 @@ export function registerRoutes(app: Express) {
       const allContent = await storage.getContentItems();
       const cases = await storage.getCases();
 
+      console.log("Fetched cases:", cases.length);
+
       // Calculate statistics
       const total = allContent.length;
       const completedCases = cases.filter(c => c.decision);
       const avgProcessingTime = completedCases.length ?
-        completedCases.reduce((acc, c) => acc + (c.createdAt.getTime() - new Date(c.createdAt).getTime()), 0) / completedCases.length :
+        completedCases.reduce((acc, c) => {
+          const processingTime = new Date(c.createdAt).getTime() - new Date(c.createdAt).getTime();
+          return acc + processingTime;
+        }, 0) / completedCases.length :
         0;
 
       // Calculate AI accuracy by comparing AI suggestions with moderator decisions
@@ -763,17 +768,23 @@ export function registerRoutes(app: Express) {
         date.setDate(date.getDate() - i);
         date.setHours(0, 0, 0, 0);
 
-        const daysCases = cases.filter(c =>
-          new Date(c.createdAt).toDateString() === date.toDateString() &&
-          c.decision
-        );
+        const daysCases = cases.filter(c => {
+          const caseDate = new Date(c.createdAt);
+          return caseDate.getFullYear() === date.getFullYear() &&
+                 caseDate.getMonth() === date.getMonth() &&
+                 caseDate.getDate() === date.getDate() &&
+                 c.decision;
+        });
 
-        return {
+        const trendData = {
           date: date.toISOString().split('T')[0],
           approved: daysCases.filter(c => c.decision === 'approved').length,
           rejected: daysCases.filter(c => c.decision === 'rejected').length,
           flagged: daysCases.filter(c => c.decision === 'review').length,
         };
+
+        console.log(`Trend data for ${trendData.date}:`, trendData);
+        return trendData;
       }).reverse();
 
       // Calculate content type distribution
@@ -785,7 +796,8 @@ export function registerRoutes(app: Express) {
 
         const itemCase = cases.find(c => c.contentId === item.id && c.decision);
         if (itemCase) {
-          acc[item.type].totalTime += itemCase.createdAt.getTime() - new Date(itemCase.createdAt).getTime();
+          const processingTime = new Date(itemCase.createdAt).getTime() - new Date(itemCase.createdAt).getTime();
+          acc[item.type].totalTime += processingTime;
         }
 
         return acc;
@@ -797,14 +809,17 @@ export function registerRoutes(app: Express) {
         count: stats.count,
       }));
 
-      res.json({
+      const response = {
         total,
         avgProcessingTime,
         aiAccuracy,
         flaggedContentRatio,
         moderationTrends,
         contentTypeDistribution,
-      });
+      };
+
+      console.log("Stats response:", response);
+      res.json(response);
     } catch (error) {
       console.error("Error fetching stats:", error);
       res.status(500).json({ message: "Error fetching statistics" });
