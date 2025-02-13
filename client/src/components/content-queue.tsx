@@ -69,194 +69,6 @@ interface Filters {
   dateTo: Date | null;
 }
 
-const QueueContent = () => (
-  <Card className="mt-4">
-    <CardHeader>
-      <div className="flex items-center justify-between">
-        <CardDescription>
-          {activeTab === "my-queue"
-            ? `Items assigned to me (${filteredItems.length} items)`
-            : `All content items (${filteredItems.length} items)`}
-        </CardDescription>
-        <Select
-          value={pageSize.toString()}
-          onValueChange={(value) => {
-            setPageSize(Number(value));
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-[130px]">
-            <SelectValue placeholder="Page Size" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5 per page</SelectItem>
-            <SelectItem value="10">10 per page</SelectItem>
-            <SelectItem value="20">20 per page</SelectItem>
-            <SelectItem value="50">50 per page</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[100px] py-2">Preview</TableHead>
-              <TableHead className="py-2">Title</TableHead>
-              <TableHead onClick={() => toggleSort("type")} className="cursor-pointer py-2">
-                Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
-              </TableHead>
-              <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer py-2">
-                Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
-              </TableHead>
-              <TableHead onClick={() => toggleSort("status")} className="cursor-pointer py-2">
-                Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
-              </TableHead>
-              <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer py-2">
-                Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
-              </TableHead>
-              <TableHead className="py-2">Assigned To</TableHead>
-              <TableHead className="w-[100px] py-2">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedItems.map((item) => (
-              <TableRow
-                key={item.id}
-                className="group cursor-pointer hover:bg-muted/50"
-                onClick={() => onOpenModeration?.(item)}
-              >
-                <TableCell className="py-1 px-2">
-                  {renderThumbnail(item)}
-                </TableCell>
-                <TableCell className="py-1 font-medium">
-                  <div className="truncate max-w-[200px] text-sm">{getDisplayName(item)}</div>
-                </TableCell>
-                <TableCell className="py-1">
-                  <Badge variant="outline" className="text-xs">{item.type}</Badge>
-                </TableCell>
-                <TableCell className="py-1">
-                  <Badge variant={item.priority > 1 ? "destructive" : "secondary"} className="text-xs">
-                    {item.priority === 1 ? "Low" : "High"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="py-1">
-                  <Badge
-                    variant={
-                      item.status === "approved"
-                        ? "secondary"
-                        : item.status === "rejected"
-                          ? "destructive"
-                          : "outline"
-                    }
-                    className="text-xs"
-                  >
-                    {item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="py-1 text-sm">
-                  {item.createdAt ? (
-                    format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
-                  ) : (
-                    "Unknown"
-                  )}
-                </TableCell>
-                <TableCell className="py-1">
-                  {item.assignedUserName ? (
-                    <Badge variant="outline" className="bg-muted text-xs">
-                      {item.assignedUserName}
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">Unassigned</span>
-                  )}
-                </TableCell>
-                <TableCell className="py-1">
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenModeration?.(item);
-                      }}
-                    >
-                      <Eye className="w-3 h-3" />
-                    </Button>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Content</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this content? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteMutation.mutate(item.id);
-                            }}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
-          </p>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setPage(page - 1)}
-              disabled={page === 1}
-            >
-              Previous
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setPage(page + 1)}
-              disabled={page >= totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
 export default function ContentQueue({ onOpenModeration }: QueueProps) {
   // Add current user query
   const { data: currentUser } = useQuery({
@@ -455,6 +267,194 @@ export default function ContentQueue({ onOpenModeration }: QueueProps) {
       </Card>
     );
   }
+
+  const QueueContent = () => (
+    <Card className="mt-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardDescription>
+            {activeTab === "my-queue"
+              ? `Items assigned to me (${filteredItems.length} items)`
+              : `All content items (${filteredItems.length} items)`}
+          </CardDescription>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(value) => {
+              setPageSize(Number(value));
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Page Size" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 per page</SelectItem>
+              <SelectItem value="10">10 per page</SelectItem>
+              <SelectItem value="20">20 per page</SelectItem>
+              <SelectItem value="50">50 per page</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[100px] py-2">Preview</TableHead>
+                <TableHead className="py-2">Title</TableHead>
+                <TableHead onClick={() => toggleSort("type")} className="cursor-pointer py-2">
+                  Type {sortField === "type" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("priority")} className="cursor-pointer py-2">
+                  Priority {sortField === "priority" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("status")} className="cursor-pointer py-2">
+                  Status {sortField === "status" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead onClick={() => toggleSort("createdAt")} className="cursor-pointer py-2">
+                  Created At {sortField === "createdAt" && (sortDirection === "asc" ? "↑" : "↓")}
+                </TableHead>
+                <TableHead className="py-2">Assigned To</TableHead>
+                <TableHead className="w-[100px] py-2">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedItems.map((item) => (
+                <TableRow
+                  key={item.id}
+                  className="group cursor-pointer hover:bg-muted/50"
+                  onClick={() => onOpenModeration?.(item)}
+                >
+                  <TableCell className="py-1 px-2">
+                    {renderThumbnail(item)}
+                  </TableCell>
+                  <TableCell className="py-1 font-medium">
+                    <div className="truncate max-w-[200px] text-sm">{getDisplayName(item)}</div>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <Badge variant="outline" className="text-xs">{item.type}</Badge>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <Badge variant={item.priority > 1 ? "destructive" : "secondary"} className="text-xs">
+                      {item.priority === 1 ? "Low" : "High"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <Badge
+                      variant={
+                        item.status === "approved"
+                          ? "secondary"
+                          : item.status === "rejected"
+                            ? "destructive"
+                            : "outline"
+                      }
+                      className="text-xs"
+                    >
+                      {item.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-1 text-sm">
+                    {item.createdAt ? (
+                      format(new Date(item.createdAt), "MMM d, yyyy HH:mm")
+                    ) : (
+                      "Unknown"
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1">
+                    {item.assignedUserName ? (
+                      <Badge variant="outline" className="bg-muted text-xs">
+                        {item.assignedUserName}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Unassigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="py-1">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenModeration?.(item);
+                        }}
+                      >
+                        <Eye className="w-3 h-3" />
+                      </Button>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Content</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this content? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteMutation.mutate(item.id);
+                              }}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing {start + 1}-{Math.min(start + pageSize, totalItems)} of {totalItems} items
+            </p>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setPage(page + 1)}
+                disabled={page >= totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-4">
