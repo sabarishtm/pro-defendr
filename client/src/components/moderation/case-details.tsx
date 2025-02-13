@@ -15,6 +15,12 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { VideoTimeline } from "@/components/VideoTimeline";
 
+const getVariantForScore = (score: number): "destructive" | "secondary" | "outline" => {
+  if (score > 0.6) return "destructive";     // Red for > 60%
+  if (score >= 0.1) return "secondary";      // Amber for 10-60%
+  return "outline";                          // Grey for < 10%
+};
+
 interface CaseDetailsProps {
   contentItem: ContentItem;
   moderationCase: ModerationCase | undefined;
@@ -37,11 +43,12 @@ function TimelineAlert({ timeline, selectedTime }: TimelineAlertProps) {
       </h3>
       <div className="flex flex-wrap gap-2">
         {Object.entries(timePoint.confidence)
+          .filter(([_, confidence]) => confidence > 0)  // Filter out scores ≤ 0
           .sort(([_, a], [__, b]) => b - a)
           .map(([type, confidence]) => (
             <Badge
               key={type}
-              variant={confidence > 0.5 ? "destructive" : "secondary"}
+              variant={getVariantForScore(confidence)}
               className="text-xs"
             >
               {type.replace(/_/g, ' ')} ({(confidence * 100).toFixed(1)}%)
@@ -349,11 +356,17 @@ export function CaseDetails({
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium text-muted-foreground">Content Warnings</h3>
                     <div className="flex flex-wrap gap-2">
-                      {contentItem.metadata.aiAnalysis.contentFlags.map((flag, index) => (
-                        <Badge key={index} variant="destructive" className="text-xs">
-                          {flag.type} ({Math.round(flag.severity * 10)}%)
-                        </Badge>
-                      ))}
+                      {contentItem.metadata.aiAnalysis.contentFlags
+                        .filter(flag => flag.severity > 0)  // Filter out severity ≤ 0
+                        .map((flag, index) => (
+                          <Badge
+                            key={index}
+                            variant={getVariantForScore(flag.severity)}
+                            className="text-xs"
+                          >
+                            {flag.type} ({Math.round(flag.severity * 100)}%)
+                          </Badge>
+                        ))}
                     </div>
                   </div>
                 )}
